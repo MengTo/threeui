@@ -11,7 +11,7 @@ const catalog = await readFile(resolve(root, "src/data/shaders.tsx"), "utf8");
 const generator = await readFile(resolve(root, "scripts/generate-library-entry.mjs"), "utf8");
 
 test("the npm package is public and exports ESM, types, CSS, and assets", () => {
-  assert.equal(packageJson.name, "threeui");
+  assert.equal(packageJson.name, "@designcodeio/threeui");
   assert.equal(packageJson.private, undefined);
   assert.equal(packageJson.publishConfig.access, "public");
   assert.equal(packageJson.exports["."].import, "./lib-dist/index.js");
@@ -21,8 +21,8 @@ test("the npm package is public and exports ESM, types, CSS, and assets", () => 
   assert.equal(packageJson.exports["./assets/*"], "./lib-dist/assets/*");
 });
 
-test("the Pro installer uses the public threeui-cli package name", () => {
-  assert.equal(cliPackageJson.name, "threeui-cli");
+test("the Pro installer uses the public @designcodeio/threeui-cli package name", () => {
+  assert.equal(cliPackageJson.name, "@designcodeio/threeui-cli");
   assert.equal(cliPackageJson.private, undefined);
   assert.equal(cliPackageJson.publishConfig.access, "public");
   assert.equal(cliPackageJson.bin.threeui, "./bin/threeui.mjs");
