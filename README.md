@@ -35,14 +35,14 @@ npm run build
 Install the public Community component library from npm:
 
 ```bash
-npm install @threeui/react
+npm install threeui
 ```
 
 Import a component and the shared styles:
 
 ```tsx
-import { AtTheHorizon } from "@threeui/react";
-import "@threeui/react/style.css";
+import { AtTheHorizon } from "threeui";
+import "threeui/style.css";
 
 export function Hero() {
   return <AtTheHorizon />;
@@ -52,20 +52,20 @@ export function Hero() {
 For the smallest development import graph, use a component subpath:
 
 ```tsx
-import { AtTheHorizon } from "@threeui/react/components/AtTheHorizon";
+import { AtTheHorizon } from "threeui/components/AtTheHorizon";
 ```
 
-Components that render full HTML documents expect their runtime files at the same root-relative URLs used by the ThreeUI preview. Copy the needed files from `node_modules/@threeui/react/lib-dist/assets/` into your app's public directory, or override the component's `sourceUrl` or `assetBaseUrl` prop where available.
+Components that render full HTML documents expect their runtime files at the same root-relative URLs used by the ThreeUI preview. Copy the needed files from `node_modules/threeui/lib-dist/assets/` into your app's public directory, or override the component's `sourceUrl` or `assetBaseUrl` prop where available.
 
 ## Pro source access
 
 Pro implementation source is deliberately not published to npm. Active ThreeUI Pro members authenticate through the browser and download an entitled source bundle with the public CLI:
 
 ```bash
-npx @threeui/cli add cross-beam
+npx threeui-cli add cross-beam
 ```
 
-The CLI uses OAuth with PKCE, stores its refreshable session with owner-only permissions, checks the account entitlement on every server request, and refuses to overwrite changed project files unless `--force` is supplied. Run `npx @threeui/cli --help` for login, logout, destination, and development endpoint options.
+The CLI uses OAuth with PKCE, stores its refreshable session with owner-only permissions, checks the account entitlement on every server request, and refuses to overwrite changed project files unless `--force` is supplied. Run `npx threeui-cli --help` for login, logout, destination, and development endpoint options.
 
 ## Synchronization
 

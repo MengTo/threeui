@@ -1,5 +1,5 @@
 {
-  "name": "@threeui/cli",
+  "name": "threeui-cli",
   "version": "0.1.0",
   "description": "Install ThreeUI Pro component source after browser-based account authentication.",
   "license": "MIT",
