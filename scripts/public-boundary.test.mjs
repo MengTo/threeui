@@ -24,6 +24,25 @@ const visible = catalog.VISIBLE_READY_SHADERS;
 const allRoutes = catalog.READY_SHADERS;
 const componentReport = new Map(report.components.map((component) => [component.id, component]));
 
+test("installation surfaces reference the published npm package", async () => {
+  const paths = [
+    "src/components/InstallationDocumentation.tsx",
+    "src/components/InstallationSteps.tsx",
+    "src/components/ShaderDocumentation.tsx",
+    "src/components/buildSkillMarkdown.js",
+    "src/seo.js",
+  ];
+  const sources = await Promise.all(paths.map((path) => readFile(join(root, path), "utf8")));
+  const combined = sources.join("\n");
+
+  assert.match(sources[0], /@designcodeio\/threeui/);
+  assert.match(sources[1], /npm install @designcodeio\/threeui/);
+  assert.match(sources[1], /import "@designcodeio\/threeui\/style\.css"/);
+  assert.match(sources[2], /from "@designcodeio\/threeui"/);
+  assert.match(sources[4], /Install @designcodeio\/threeui/);
+  assert.doesNotMatch(combined, /@threeui\/react/);
+});
+
 test("the public catalog is the complete current Community snapshot", () => {
   assert.equal(report.communityParents, 50);
   assert.equal(report.communityRoutes, 111);

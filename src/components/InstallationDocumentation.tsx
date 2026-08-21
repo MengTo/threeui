@@ -41,7 +41,7 @@ export function InstallationDocumentation({ onPricing, onSelect }: InstallationD
           <h1>Installation</h1>
           <p className="lede">Add the provenance-verified ThreeUI renderers to an existing React project.</p>
           <div className="tagrow">
-            <span className="tag">@threeui/react</span>
+            <span className="tag">@designcodeio/threeui</span>
           </div>
           <div className="divider" />
 

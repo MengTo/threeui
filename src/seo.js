@@ -57,7 +57,7 @@ export function buildRouteSeo(route, origin, catalog = []) {
 
   if (route.page === "installation") {
     title = brandedTitle("Install ThreeUI for React");
-    description = "Install @threeui/react, add the shared styles, check peer requirements, and verify your first interactive Three.js component.";
+    description = "Install @designcodeio/threeui, add the shared styles, check peer requirements, and verify your first interactive Three.js component.";
     structuredData = {
       "@context": "https://schema.org",
       "@type": "TechArticle",

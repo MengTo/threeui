@@ -279,12 +279,12 @@ function OpenShaderDocumentation({ shader, activeVariantId, onPricing, onSearchT
     );
     const props = [...variantProps, ...controlProps].join("\n");
     if (props) {
-      return `import { ${shader.importName} } from "@threeui/react";\nimport "@threeui/react/style.css";\n\nexport function Scene() {\n  return (\n    <div className="shader-frame">\n      <${shader.importName}\n${props}\n      />\n    </div>\n  );\n}`;
+      return `import { ${shader.importName} } from "@designcodeio/threeui";\nimport "@designcodeio/threeui/style.css";\n\nexport function Scene() {\n  return (\n    <div className="shader-frame">\n      <${shader.importName}\n${props}\n      />\n    </div>\n  );\n}`;
     }
     if (shader.id === "sketchbook") {
-      return `import { Sketchbook } from "@threeui/react";\nimport "@threeui/react/style.css";\n\nexport function Scene() {\n  return (\n    <div className="shader-frame">\n      <Sketchbook assetBaseUrl="/sketchbook/" />\n    </div>\n  );\n}`;
+      return `import { Sketchbook } from "@designcodeio/threeui";\nimport "@designcodeio/threeui/style.css";\n\nexport function Scene() {\n  return (\n    <div className="shader-frame">\n      <Sketchbook assetBaseUrl="/sketchbook/" />\n    </div>\n  );\n}`;
     }
-    return `import { ${shader.importName} } from "@threeui/react";\nimport "@threeui/react/style.css";\n\nexport function Scene() {\n  return (\n    <div className="shader-frame">\n      <${shader.importName} />\n    </div>\n  );\n}`;
+    return `import { ${shader.importName} } from "@designcodeio/threeui";\nimport "@designcodeio/threeui/style.css";\n\nexport function Scene() {\n  return (\n    <div className="shader-frame">\n      <${shader.importName} />\n    </div>\n  );\n}`;
   }, [activeControls, activeVariant, previewSettings, shader]);
 
   useEffect(() => {
