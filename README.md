@@ -30,6 +30,43 @@ Run the complete publication boundary, type, and production-build checks:
 npm run build
 ```
 
+## Install the React package
+
+Install the public Community component library from npm:
+
+```bash
+npm install @threeui/react
+```
+
+Import a component and the shared styles:
+
+```tsx
+import { AtTheHorizon } from "@threeui/react";
+import "@threeui/react/style.css";
+
+export function Hero() {
+  return <AtTheHorizon />;
+}
+```
+
+For the smallest development import graph, use a component subpath:
+
+```tsx
+import { AtTheHorizon } from "@threeui/react/components/AtTheHorizon";
+```
+
+Components that render full HTML documents expect their runtime files at the same root-relative URLs used by the ThreeUI preview. Copy the needed files from `node_modules/@threeui/react/lib-dist/assets/` into your app's public directory, or override the component's `sourceUrl` or `assetBaseUrl` prop where available.
+
+## Pro source access
+
+Pro implementation source is deliberately not published to npm. Active ThreeUI Pro members authenticate through the browser and download an entitled source bundle with the public CLI:
+
+```bash
+npx @threeui/cli add cross-beam
+```
+
+The CLI uses OAuth with PKCE, stores its refreshable session with owner-only permissions, checks the account entitlement on every server request, and refuses to overwrite changed project files unless `--force` is supplied. Run `npx @threeui/cli --help` for login, logout, destination, and development endpoint options.
+
 ## Synchronization
 
 The checked-in repository runs independently. Maintainers can refresh its Community subset from a separately held main-project snapshot:

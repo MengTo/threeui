@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "noEmit": false,
+    "outDir": "lib-dist",
+    "rootDir": "src"
+  },
+  "include": ["src/index.ts", "src/shaders", "src/vite-env.d.ts"]
+}

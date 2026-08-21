@@ -1,0 +1,49 @@
+name: Publish npm packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: Package to publish
+        required: true
+        type: choice
+        options:
+          - react
+          - cli
+          - both
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  react:
+    if: inputs.package == 'react' || inputs.package == 'both'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - run: npm ci
+      - run: npm install --global npm@latest
+      - run: npm publish --access public --provenance
+
+  cli:
+    if: inputs.package == 'cli' || inputs.package == 'both'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/cli
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - run: npm install --global npm@latest
+      - run: npm test
+      - run: npm publish --access public --provenance

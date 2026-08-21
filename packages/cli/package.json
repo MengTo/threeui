@@ -1,0 +1,33 @@
+{
+  "name": "@threeui/cli",
+  "version": "0.1.0",
+  "description": "Install ThreeUI Pro component source after browser-based account authentication.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "threeui": "./bin/threeui.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MengTo/threeui.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://threeui.com/installation",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "prepack": "npm test"
+  }
+}
