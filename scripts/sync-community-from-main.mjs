@@ -68,13 +68,20 @@ const generatedRendererPaths = new Set([
   "src/shaders/landing-pages/LandingPages.tsx",
   "src/shaders/landing-pages/pageRecipes.ts",
   "src/shaders/neuform-isolated/NeuformIsolatedEffects.tsx",
+  "src/shaders/section-elements/section-elements.css",
   "src/shaders/sketchbook/sketchbookDocument.js",
   "src/shaders/spark-badge/SparkBadge.tsx",
   "src/shaders/sylva-living-world/SylvaLivingWorldScene.tsx",
   "src/shaders/temple-night/TempleNightScene.tsx",
 ]);
 
-const excludedAssetPaths = new Set();
+const excludedAssetPaths = new Set([
+  "src/shaders/section-elements/assets/sf-bold.woff2",
+  "src/shaders/section-elements/assets/sf-light.woff2",
+  "src/shaders/section-elements/assets/sf-medium.woff2",
+  "src/shaders/section-elements/assets/sf-regular.woff2",
+  "src/shaders/section-elements/assets/sf-semibold.woff2",
+]);
 
 const textExtensions = new Set([".css", ".glsl", ".html", ".js", ".jsx", ".json", ".mjs", ".ts", ".tsx", ".txt"]);
 const mediaOrigin = "https://threeui.com";
@@ -439,6 +446,16 @@ function sanitizeNeuformIsolatedEffects(source) {
   return result;
 }
 
+function sanitizeSectionElementsCss(source) {
+  const result = source
+    .replace(/@font-face \{[\s\S]*?\}\s*/g, "")
+    .replace('"Section SF", -apple-system', '-apple-system');
+  if (/Section SF|sf-(?:bold|light|medium|regular|semibold)\.woff2/.test(result)) {
+    throw new Error("Section Elements font sanitization retained a restricted font reference.");
+  }
+  return result;
+}
+
 function generateSkillMarkdownModule(skillById) {
   return `const SKILLS = ${JSON.stringify(Object.fromEntries(skillById), null, 2)};\nexport function buildSkillMarkdown(shader) { const skill = SKILLS[shader.id]; if (!skill) throw new Error(\`No standalone implementation guide exists for \${shader.id}.\`); return skill; }\n`;
 }
@@ -578,6 +595,10 @@ await writeGenerated(
 await writeGenerated(
   "src/shaders/neuform-isolated/NeuformIsolatedEffects.tsx",
   sanitizeNeuformIsolatedEffects(await readFile(join(sourceRoot, "src/shaders/neuform-isolated/NeuformIsolatedEffects.tsx"), "utf8")),
+);
+await writeGenerated(
+  "src/shaders/section-elements/section-elements.css",
+  sanitizeSectionElementsCss(await readFile(join(sourceRoot, "src/shaders/section-elements/section-elements.css"), "utf8")),
 );
 await writeGenerated(
   "src/shaders/sketchbook/sketchbookDocument.js",
