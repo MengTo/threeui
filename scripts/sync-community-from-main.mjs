@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
+import { realpathSync } from "node:fs";
 import { copyFile, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, extname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,6 +8,7 @@ import { createServer } from "vite";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const sourceRoot = resolve(process.env.THREEUI_SOURCE_ROOT ?? process.argv[2] ?? "");
+const canonicalSourceRoot = realpathSync(sourceRoot);
 
 if (!process.env.THREEUI_SOURCE_ROOT && !process.argv[2]) {
   throw new Error("Pass the private ThreeUI source snapshot path or set THREEUI_SOURCE_ROOT.");
@@ -126,7 +128,7 @@ function rendererDescriptor(shader, componentEntry) {
   const fileSystemIndex = path.indexOf("@fs/");
   if (fileSystemIndex >= 0) {
     const absolutePath = path.slice(fileSystemIndex + 3);
-    const sourceRelativePath = relative(sourceRoot, absolutePath);
+    const sourceRelativePath = relative(canonicalSourceRoot, absolutePath);
     if (sourceRelativePath.startsWith("..")) throw new Error(`Renderer ${shader.id} resolved outside the source snapshot.`);
     path = `/${posixPath(sourceRelativePath)}`;
   }
