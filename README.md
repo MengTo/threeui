@@ -57,6 +57,16 @@ import { AtTheHorizon } from "@designcodeio/threeui/components/AtTheHorizon";
 
 Components that render full HTML documents expect their runtime files at the same root-relative URLs used by the ThreeUI preview. Copy the needed files from `node_modules/@designcodeio/threeui/lib-dist/assets/` into your app's public directory, or override the component's `sourceUrl` or `assetBaseUrl` prop where available.
 
+## Copy Community source
+
+If you want one free Community component as editable source instead of an npm dependency, the independent [ThreeUI CLI](https://github.com/sjh9714/threeui-cli) copies the component together with its shared files and public assets:
+
+```bash
+npx threeui-cli add kage-landing-page
+```
+
+It reads the published `public/source-code.json` registry, keeps the original paths, verifies every SHA-256 digest, and refuses to replace changed files unless `--force` is supplied.
+
 ## Pro source access
 
 Pro implementation source is deliberately not published to npm. Active ThreeUI Pro members authenticate through the browser and download an entitled source bundle with the public CLI:
