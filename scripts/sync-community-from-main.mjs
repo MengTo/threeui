@@ -122,7 +122,15 @@ function rendererDescriptor(shader, componentEntry) {
   const loader = String(component?._payload?._result ?? "");
   const match = loader.match(/__vite_ssr_dynamic_import__\("([^"]+)"\).*default: module\.([A-Za-z0-9_$]+)/s);
   if (!match) throw new Error(`Cannot resolve the lazy renderer for ${shader.id}.`);
-  return { exportName: match[2], path: match[1], eager: false };
+  let path = match[1];
+  const fileSystemIndex = path.indexOf("@fs/");
+  if (fileSystemIndex >= 0) {
+    const absolutePath = path.slice(fileSystemIndex + 3);
+    const sourceRelativePath = relative(sourceRoot, absolutePath);
+    if (sourceRelativePath.startsWith("..")) throw new Error(`Renderer ${shader.id} resolved outside the source snapshot.`);
+    path = `/${posixPath(sourceRelativePath)}`;
+  }
+  return { exportName: match[2], path, eager: false };
 }
 
 function sanitizeMetadata(shader, freeIds, getShaderAccess) {

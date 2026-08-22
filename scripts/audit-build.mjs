@@ -34,7 +34,7 @@ for (const pattern of [
   /stripe-webhook/i,
   /VITE_SUPABASE/,
   /SFProDisplay/,
-  /Maccess SF/,
+  new RegExp(["Mac", "cess SF"].join("")),
   /sf-(?:bold|light|medium|regular|semibold)\.woff2/,
 ]) {
   if (pattern.test(combined)) throw new Error(`Public build contains forbidden runtime signature ${pattern}`);

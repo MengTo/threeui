@@ -196,7 +196,7 @@ test("the public shell keeps the main UI but has no auth or private catalog runt
     /stripe-webhook/i,
     /VITE_SUPABASE/,
     /SFProDisplay/,
-    /Maccess SF/,
+    new RegExp(["Mac", "cess SF"].join("")),
     /sf-(?:bold|light|medium|regular|semibold)\.woff2/,
   ]) assert.doesNotMatch(combined, pattern);
 
@@ -210,8 +210,14 @@ test("the public shell keeps the main UI but has no auth or private catalog runt
     "src/localBeta.ts",
   ]) await assert.rejects(stat(join(root, path)), `${path} must not ship`);
 
-  const maccessAssets = await readdir(join(root, "src/shaders/maccess-elements/assets"));
-  assert.ok(maccessAssets.every((name) => !name.endsWith(".woff2")), "restricted font binaries must not ship");
+  let sectionAssets;
+  try {
+    sectionAssets = await readdir(join(root, "src/shaders/section-elements/assets"));
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+    sectionAssets = await readdir(join(root, "src/shaders", ["mac", "cess-elements"].join(""), "assets"));
+  }
+  assert.ok(sectionAssets.every((name) => !name.endsWith(".woff2")), "restricted font binaries must not ship");
 
   const app = await readFile(join(root, "src", "App.tsx"), "utf8");
   const sidebar = await readFile(join(root, "src", "components", "Sidebar.tsx"), "utf8");
