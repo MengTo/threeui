@@ -67,6 +67,7 @@ const generatedRendererPaths = new Set([
   "src/shaders/globe/GlobeCollection.tsx",
   "src/shaders/landing-pages/LandingPages.tsx",
   "src/shaders/landing-pages/pageRecipes.ts",
+  "src/shaders/neuform-isolated/NeuformIsolatedEffects.tsx",
   "src/shaders/sketchbook/sketchbookDocument.js",
   "src/shaders/spark-badge/SparkBadge.tsx",
   "src/shaders/sylva-living-world/SylvaLivingWorldScene.tsx",
@@ -427,6 +428,17 @@ function generateCommunityStyles(source) {
   return `/* Generated from the main renderer stylesheet; Community selectors only. */\n${communityOnly}\n`;
 }
 
+function sanitizeNeuformIsolatedEffects(source) {
+  const result = source
+    .replace(/^import particleOrbSource from "\.\/sources\/synthesis-orb\.html\?raw";\n/m, "")
+    .replace(/\n  particleOrb: \{[\s\S]*?\n  \},\n  performanceGaugesTachometer:/, "\n  performanceGaugesTachometer:")
+    .replace(/^export const ParticleOrbField = createEffectComponent\(EFFECTS\.particleOrb\);\n/m, "");
+  if (/particleOrb|synthesis-orb/.test(result)) {
+    throw new Error("Neuform isolation retained the excluded Particle Orb Beta renderer.");
+  }
+  return result;
+}
+
 function generateSkillMarkdownModule(skillById) {
   return `const SKILLS = ${JSON.stringify(Object.fromEntries(skillById), null, 2)};\nexport function buildSkillMarkdown(shader) { const skill = SKILLS[shader.id]; if (!skill) throw new Error(\`No standalone implementation guide exists for \${shader.id}.\`); return skill; }\n`;
 }
@@ -562,6 +574,10 @@ await writeGenerated("src/shaders/globe/GlobeCollection.tsx", generateGlobeColle
 await writeGenerated(
   "src/shaders/community.css",
   generateCommunityStyles(await readFile(join(sourceRoot, "src/shaders/threeui.css"), "utf8")),
+);
+await writeGenerated(
+  "src/shaders/neuform-isolated/NeuformIsolatedEffects.tsx",
+  sanitizeNeuformIsolatedEffects(await readFile(join(sourceRoot, "src/shaders/neuform-isolated/NeuformIsolatedEffects.tsx"), "utf8")),
 );
 await writeGenerated(
   "src/shaders/sketchbook/sketchbookDocument.js",
