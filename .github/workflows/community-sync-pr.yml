@@ -17,7 +17,7 @@ jobs:
   open-pull-request:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Open or refresh the Community sync pull request
         env:
           GH_TOKEN: ${{ github.token }}
