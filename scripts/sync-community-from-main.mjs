@@ -67,20 +67,13 @@ const generatedRendererPaths = new Set([
   "src/shaders/globe/GlobeCollection.tsx",
   "src/shaders/landing-pages/LandingPages.tsx",
   "src/shaders/landing-pages/pageRecipes.ts",
-  "src/shaders/maccess-elements/maccess-elements.css",
   "src/shaders/sketchbook/sketchbookDocument.js",
   "src/shaders/spark-badge/SparkBadge.tsx",
   "src/shaders/sylva-living-world/SylvaLivingWorldScene.tsx",
   "src/shaders/temple-night/TempleNightScene.tsx",
 ]);
 
-const excludedAssetPaths = new Set([
-  "src/shaders/maccess-elements/assets/sf-bold.woff2",
-  "src/shaders/maccess-elements/assets/sf-light.woff2",
-  "src/shaders/maccess-elements/assets/sf-medium.woff2",
-  "src/shaders/maccess-elements/assets/sf-regular.woff2",
-  "src/shaders/maccess-elements/assets/sf-semibold.woff2",
-]);
+const excludedAssetPaths = new Set();
 
 const textExtensions = new Set([".css", ".glsl", ".html", ".js", ".jsx", ".json", ".mjs", ".ts", ".tsx", ".txt"]);
 const mediaOrigin = "https://threeui.com";
@@ -379,16 +372,6 @@ function sanitizeSparkBadgeHtml(source) {
   return result;
 }
 
-function sanitizeMaccessCss(source) {
-  const result = source
-    .replace(/@font-face \{[\s\S]*?\}\s*/g, "")
-    .replace('"Maccess SF", -apple-system', '-apple-system');
-  if (/Maccess SF|sf-(?:bold|light|medium|regular|semibold)\.woff2/.test(result)) {
-    throw new Error("Maccess font sanitization retained a restricted font reference.");
-  }
-  return result;
-}
-
 function generateCommunityStyles(source) {
   const sliceBetween = (start, end) => {
     const from = source.indexOf(start);
@@ -576,10 +559,6 @@ await writeGenerated(
 await writeGenerated("src/shaders/landing-pages/pageRecipes.ts", generatePageRecipes(recipeModule));
 await writeGenerated("src/shaders/landing-pages/LandingPages.tsx", generateLandingPagesModule());
 await writeGenerated("src/shaders/globe/GlobeCollection.tsx", generateGlobeCollectionModule());
-await writeGenerated(
-  "src/shaders/maccess-elements/maccess-elements.css",
-  sanitizeMaccessCss(await readFile(join(sourceRoot, "src/shaders/maccess-elements/maccess-elements.css"), "utf8")),
-);
 await writeGenerated(
   "src/shaders/community.css",
   generateCommunityStyles(await readFile(join(sourceRoot, "src/shaders/threeui.css"), "utf8")),
