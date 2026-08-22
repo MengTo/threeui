@@ -116,13 +116,18 @@ test("the main Community renderer styles are present without Pro or Beta selecto
     ".landscape-scene__frame",
     ".liquid-metal-button__frame",
     ".spark-badge__frame",
-    ".hypnotic-loops__frame",
-    ".at-the-horizon__frame",
     ".text-path-study-frame",
     ".article-headings-component",
     ".animated-top-dock-component",
     ".typography-vortex-component",
   ]) assert.ok(css.includes(selector), `missing Community renderer style ${selector}`);
+  for (const [id, selector] of [
+    ["hypnotic-loops", ".hypnotic-loops__frame"],
+    ["at-the-horizon", ".at-the-horizon__frame"],
+  ]) {
+    const expected = visible.some((shader) => shader.id === id);
+    assert.equal(css.includes(selector), expected, `${id} renderer CSS access drift`);
+  }
   for (const selector of [
     "mechanical-keyboard",
     "sakura-branch-scene",
@@ -143,12 +148,13 @@ test("the main Community renderer styles are present without Pro or Beta selecto
 });
 
 test("Community iframe renderers include their public runtime documents", async () => {
-  for (const [path, signature] of [
-    ["public/hypnotic-loops.html", "Hypnotic Loops — LINES / DOTS / RAYS / TYPE"],
-    ["public/japanese-tower.html", "<title>Country Towers Landscape</title>"],
-    ["public/landscape.html", "<title>Landscape — Time & Weather</title>"],
-    ["public/spark-badge.html", "<title>Spark Badge — credential in rain</title>"],
+  for (const [id, path, signature] of [
+    ["hypnotic-loops", "public/hypnotic-loops.html", "Hypnotic Loops — LINES / DOTS / RAYS / TYPE"],
+    ["japanese-tower", "public/japanese-tower.html", "<title>Country Towers Landscape</title>"],
+    ["landscape", "public/landscape.html", "<title>Landscape — Time & Weather</title>"],
+    ["spark-badge", "public/spark-badge.html", "<title>Spark Badge — credential in rain</title>"],
   ]) {
+    if (!visible.some((shader) => shader.id === id)) continue;
     const source = await readFile(join(root, path), "utf8");
     assert.ok(source.includes(signature), `${path} is missing its canonical runtime document`);
   }

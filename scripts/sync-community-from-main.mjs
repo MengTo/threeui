@@ -22,7 +22,6 @@ const shellFiles = [
   "src/detailPreviews.ts",
   "src/routes.js",
   "src/seo.js",
-  "src/shaderMetrics.ts",
   "src/styles.css",
   "src/theme.ts",
   "src/components/BrandMark.tsx",
@@ -37,7 +36,6 @@ const shellFiles = [
   "src/components/buildCopyBundles.js",
   "src/components/icons.tsx",
   "src/data/catalogResults.ts",
-  "src/data/publicShaders.ts",
   "index.html",
 ];
 
@@ -55,10 +53,11 @@ const publicAdapterFiles = [
   "src/components/ShaderDocumentation.tsx",
   "src/components/Sidebar.tsx",
   "src/components/UpgradeLink.tsx",
+  "src/data/publicShaders.ts",
+  "src/shaderMetrics.ts",
 ];
 
 const publicRuntimeFiles = [
-  "public/hypnotic-loops.html",
   "public/japanese-tower.html",
   "public/threeui-mark.svg",
   "public/robots.txt",
@@ -70,6 +69,7 @@ const generatedRendererPaths = new Set([
   "src/shaders/landing-pages/LandingPages.tsx",
   "src/shaders/landing-pages/pageRecipes.ts",
   "src/shaders/neuform-isolated/NeuformIsolatedEffects.tsx",
+  "src/shaders/section-elements/SectionElements.tsx",
   "src/shaders/section-elements/section-elements.css",
   "src/shaders/sketchbook/sketchbookDocument.js",
   "src/shaders/spark-badge/SparkBadge.tsx",
@@ -390,7 +390,7 @@ function sanitizeSparkBadgeHtml(source) {
   return result;
 }
 
-function generateCommunityStyles(source) {
+function generateCommunityStyles(source, freeIds) {
   const sliceBetween = (start, end) => {
     const from = source.indexOf(start);
     const to = source.indexOf(end, from + start.length);
@@ -411,15 +411,17 @@ function generateCommunityStyles(source) {
     ".japanese-tower-landscape",
     ".liquid-metal-button",
     ".spark-badge",
-    ".hypnotic-loops",
-    ".at-the-horizon",
     ".threeui-background",
   ];
+  if (freeIds.has("hypnotic-loops")) communityRoots.push(".hypnotic-loops");
+  if (freeIds.has("at-the-horizon")) communityRoots.push(".at-the-horizon");
   const communityOnly = [
     `${communityRoots.join(",\n")} ${sharedSizing}`,
     sliceBetween(".japanese-tower-landscape {", ".sakura-branch-scene {"),
     sliceBetween(".liquid-metal-button {", ".iso-mail-lightshafts {"),
-    sliceBetween(".spark-badge {", ".scalability-bricks {"),
+    sliceBetween(".spark-badge {", ".hypnotic-loops {"),
+    ...(freeIds.has("hypnotic-loops") ? [sliceBetween(".hypnotic-loops {", ".at-the-horizon {")] : []),
+    ...(freeIds.has("at-the-horizon") ? [sliceBetween(".at-the-horizon {", ".scalability-bricks {")] : []),
     sliceBetween(".text-path-study {", ".cross-beam-canvas,"),
     sliceBetween(".temple-night-scene,", ".yosemite-sunset-scene,"),
     sliceBetween(".bookshelf,", "@font-face {"),
@@ -438,6 +440,8 @@ function generateCommunityStyles(source) {
     "yosemite-sunset",
     "presidio-sunset",
     "lake-louise",
+    ...(freeIds.has("hypnotic-loops") ? [] : ["hypnotic-loops"]),
+    ...(freeIds.has("at-the-horizon") ? [] : ["at-the-horizon"]),
   ];
   for (const selector of forbidden) {
     if (communityOnly.includes(selector)) throw new Error(`Community renderer CSS retained ${selector}.`);
@@ -462,6 +466,16 @@ function sanitizeSectionElementsCss(source) {
     .replace('"Section SF", -apple-system', '-apple-system');
   if (/Section SF|sf-(?:bold|light|medium|regular|semibold)\.woff2/.test(result)) {
     throw new Error("Section Elements font sanitization retained a restricted font reference.");
+  }
+  return result;
+}
+
+function sanitizeSectionElementsModule(source) {
+  const result = source
+    .replace(/^const bento13 = .*\nconst bentoQr = .*\nconst bento14 = .*\n/m, "")
+    .replace(/\nconst orbitIcons = \[[\s\S]*?\nexport function EditorialIntroSection/, "\nexport function EditorialIntroSection");
+  if (/bento-1[134]|WorkflowSection|workflowSteps|PairingIllustration/.test(result)) {
+    throw new Error("Section Elements sanitization retained the excluded Workflow Beta renderer.");
   }
   return result;
 }
@@ -562,6 +576,7 @@ await mkdir(join(projectRoot, "public"), { recursive: true });
 for (const path of shellFiles) await copyFromSource(path);
 for (const [path, contents] of publicAdapters) await writeGenerated(path, contents);
 for (const path of publicRuntimeFiles) await copyFromSource(path);
+if (freeIds.has("hypnotic-loops")) await copyFromSource("public/hypnotic-loops.html");
 
 const componentPaths = new Set();
 const assetPaths = new Set();
@@ -600,11 +615,15 @@ await writeGenerated("src/shaders/landing-pages/LandingPages.tsx", generateLandi
 await writeGenerated("src/shaders/globe/GlobeCollection.tsx", generateGlobeCollectionModule());
 await writeGenerated(
   "src/shaders/community.css",
-  generateCommunityStyles(await readFile(join(sourceRoot, "src/shaders/threeui.css"), "utf8")),
+  generateCommunityStyles(await readFile(join(sourceRoot, "src/shaders/threeui.css"), "utf8"), freeIds),
 );
 await writeGenerated(
   "src/shaders/neuform-isolated/NeuformIsolatedEffects.tsx",
   sanitizeNeuformIsolatedEffects(await readFile(join(sourceRoot, "src/shaders/neuform-isolated/NeuformIsolatedEffects.tsx"), "utf8")),
+);
+await writeGenerated(
+  "src/shaders/section-elements/SectionElements.tsx",
+  sanitizeSectionElementsModule(await readFile(join(sourceRoot, "src/shaders/section-elements/SectionElements.tsx"), "utf8")),
 );
 await writeGenerated(
   "src/shaders/section-elements/section-elements.css",
