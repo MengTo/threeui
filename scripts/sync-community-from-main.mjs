@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { copyFile, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, extname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -466,8 +467,49 @@ async function fileRecord(path, original) {
   };
 }
 
+async function readJsonIfPresent(path) {
+  try {
+    return JSON.parse(await readFile(path, "utf8"));
+  } catch (error) {
+    if (error?.code === "ENOENT") return undefined;
+    throw error;
+  }
+}
+
+function sourceRevision() {
+  try {
+    return execFileSync("git", ["-C", sourceRoot, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  } catch {
+    return "working-tree";
+  }
+}
+
+function withoutGeneratedAt(value) {
+  if (!value) return value;
+  const clone = structuredClone(value);
+  delete clone.generatedAt;
+  return clone;
+}
+
+function withoutSyncMetadata(value) {
+  const clone = withoutGeneratedAt(value);
+  if (clone) delete clone.sourceCommit;
+  return clone;
+}
+
+function hasProjectChangesOutsideSyncReport() {
+  const status = execFileSync(
+    "git",
+    ["-C", projectRoot, "status", "--porcelain=v1", "--untracked-files=all", "--", ".", ":(exclude)public/community-sync-report.json"],
+    { encoding: "utf8" },
+  );
+  return status.trim().length > 0;
+}
+
 const inventory = JSON.parse(await readFile(sourceInventoryPath, "utf8"));
 const registryById = new Map(inventory.components.map((component) => [String(component.id), component]));
+const previousSourceRegistry = await readJsonIfPresent(join(projectRoot, "public", "source-code.json"));
+const previousSyncReport = await readJsonIfPresent(join(projectRoot, "public", "community-sync-report.json"));
 
 const vite = await createServer({ root: sourceRoot, server: { middlewareMode: true }, appType: "custom", logLevel: "silent" });
 let shaderModule;
@@ -604,12 +646,15 @@ for (const shader of visibleFreeShaders) {
 }
 
 const sourceRegistry = { schemaVersion: 1, generatedAt: new Date().toISOString(), readyIds: visibleFreeShaders.map((shader) => String(shader.id)), sharedFiles, components: sourceComponents };
+if (previousSourceRegistry && JSON.stringify(withoutGeneratedAt(previousSourceRegistry)) === JSON.stringify(withoutGeneratedAt(sourceRegistry))) {
+  sourceRegistry.generatedAt = previousSourceRegistry.generatedAt;
+}
 await writeFile(join(projectRoot, "public", "source-code.json"), `${JSON.stringify(sourceRegistry, null, 2)}\n`);
 
 const syncReport = {
   schemaVersion: 1,
   generatedAt: new Date().toISOString(),
-  sourceCommit: (await readFile(join(sourceRoot, ".git", "HEAD"), "utf8").catch(() => "working-tree")).trim(),
+  sourceCommit: sourceRevision(),
   communityParents: visibleFreeShaders.length,
   communityRoutes: freeShaders.length,
   communityVariants: visibleFreeShaders.reduce((total, shader) => total + (shader.variants?.filter((variant) => shaderModule.getShaderAccess(shader, variant) !== "pro").length || 0), 0),
@@ -629,6 +674,14 @@ const syncReport = {
     };
   }),
 };
+if (
+  previousSyncReport
+  && !hasProjectChangesOutsideSyncReport()
+  && JSON.stringify(withoutSyncMetadata(previousSyncReport)) === JSON.stringify(withoutSyncMetadata(syncReport))
+) {
+  syncReport.generatedAt = previousSyncReport.generatedAt;
+  syncReport.sourceCommit = previousSyncReport.sourceCommit;
+}
 await writeFile(join(projectRoot, "public", "community-sync-report.json"), `${JSON.stringify(syncReport, null, 2)}\n`);
 
 console.log(`Synced ${syncReport.communityParents} Community parents, ${syncReport.communityRoutes} routes, and ${syncReport.communityVariants} free variants from the main project.`);

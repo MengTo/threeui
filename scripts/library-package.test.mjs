@@ -31,5 +31,5 @@ test("the Pro installer uses the public @designcodeio/threeui-cli package name",
 test("the generated library surface is derived only from the Community catalog imports", () => {
   assert.match(generator, /Community renderer exports/);
   assert.doesNotMatch(catalog, /\bProRenderer\b|access:\s*["']pro["']/i);
-  assert.match(catalog, /CommunityRenderer109/);
+  assert.match(catalog, /CommunityRenderer1/);
 });

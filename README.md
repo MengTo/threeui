@@ -81,6 +81,10 @@ The sync fails closed, filters Pro and Beta before generating the public import 
 - `public/source-code.json` — Community source bundles used by the Code tab
 - `src/data/shaders.tsx` — Community-only catalog and renderer imports
 
+The private ThreeUI repository runs this synchronization after every successful push to `main`. A no-op sync exits without a release. Changes update the `automation/community-sync` branch and open one reviewed pull request here. New public components, variants, or controls infer a minor release; removals infer a major release; compatible source changes infer a patch release. Merging a versioned sync pull request publishes the new package through npm trusted publishing with provenance.
+
+The public workflow also runs a clean build, boundary audit, package creation, and anonymous installation smoke test before release. The Pro installer is versioned and published separately; changes to Pro component content do not require a CLI release.
+
 ## License
 
 Application code, Community component code, and ThreeUI-authored Community imagery are MIT licensed. Bundled open fonts remain under the SIL Open Font License 1.1, and bundled Three.js runtime files remain MIT licensed. Remote catalog thumbnails and previews loaded from `https://threeui.com` are not redistributed by this repository. See `ASSET-LICENSES.md`, `FONT-LICENSES.md`, and `THIRD_PARTY_NOTICES.md`.

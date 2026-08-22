@@ -50,12 +50,13 @@
     "sync:community": "node scripts/sync-community-from-main.mjs",
     "generate:lib": "node scripts/generate-library-entry.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "node --test scripts/public-boundary.test.mjs scripts/library-package.test.mjs packages/cli/test/*.test.mjs",
+    "test": "node --test scripts/public-boundary.test.mjs scripts/library-package.test.mjs scripts/prepare-community-release.test.mjs packages/cli/test/*.test.mjs",
     "audit:public": "node scripts/audit-public.mjs",
     "build:site": "npm run typecheck && npm run audit:public && vite build && node scripts/audit-build.mjs",
     "build:lib": "npm run generate:lib && vite build --config vite.lib.config.js && tsc -p tsconfig.lib.json && node scripts/copy-library-assets.mjs",
     "build": "npm run test && npm run build:site && npm run build:lib",
     "prepack": "npm run test && npm run audit:public && npm run build:lib",
+    "smoke:package": "node scripts/package-install-smoke.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

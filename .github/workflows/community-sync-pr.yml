@@ -1,0 +1,32 @@
+name: Open Community sync pull request
+
+on:
+  push:
+    branches:
+      - automation/community-sync
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: community-sync-pr
+  cancel-in-progress: true
+
+jobs:
+  open-pull-request:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Open or refresh the Community sync pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pull_number=$(gh pr list --head automation/community-sync --base main --state open --json number --jq '.[0].number // empty')
+          if [ -z "$pull_number" ]; then
+            gh pr create \
+              --base main \
+              --head automation/community-sync \
+              --title "Sync Community package from ThreeUI" \
+              --body "Automated Community-only synchronization from the private ThreeUI main branch. Review the public boundary, inferred semantic-version bump, and generated package diff before merging."
+          fi
