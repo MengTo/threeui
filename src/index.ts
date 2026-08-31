@@ -81,7 +81,7 @@ export { RippleStudy } from "./package-components/RippleStudy";
 export { SemanticBloom } from "./package-components/SemanticBloom";
 export { ShaderButtons } from "./package-components/ShaderButtons";
 export { Sketchbook } from "./package-components/Sketchbook";
-export { SkeuomorphicToggle } from "./package-components/SkeuomorphicToggle";
+export { SkeuomorphicToggleCollection } from "./package-components/SkeuomorphicToggleCollection";
 export { SlidingTextCta } from "./package-components/SlidingTextCta";
 export { SparkBadge } from "./package-components/SparkBadge";
 export { SpinningBorderButton } from "./package-components/SpinningBorderButton";

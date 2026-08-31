@@ -1,2 +1,2 @@
 // Updated by scripts/sync-community-from-main.mjs.
-export const FULL_THREEUI_COLLECTION_COUNT = 336;
+export const FULL_THREEUI_COLLECTION_COUNT = 378;

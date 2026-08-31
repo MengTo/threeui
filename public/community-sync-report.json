@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-25T10:26:00.704Z",
-  "sourceCommit": "bab60dad20e2290cf8e35753bf4fec14c017567e",
+  "generatedAt": "2026-08-31T16:05:46.996Z",
+  "sourceCommit": "6b65f2dbec22ac58c56474f028aec5590e62d3c9",
   "communityParents": 43,
   "communityRoutes": 104,
-  "communityVariants": 147,
-  "excludedProParents": 86,
+  "communityVariants": 163,
+  "excludedProParents": 108,
   "excludedBetaParents": 23,
-  "layoutStylesSha256": "5400401f66eb773d05a7b22a6e2fd16651b732a5bd366eee1ab8b479e0327f0d",
-  "rendererStylesSha256": "6d975e7d3332aa85d7bc1a55cdff592d63b0403f0988dfefa905dbe4c341d328",
+  "layoutStylesSha256": "cee8ebe47ad857149f52f12bb12324a83856fc403ea1431f238aec4ecc385760",
+  "rendererStylesSha256": "dc36aeb914df4c554164304292d75738a770e454b1e2710bac1ce4169d5fee2a",
   "components": [
     {
       "id": "kage-landing-page",
@@ -136,7 +136,12 @@
     },
     {
       "id": "crt",
-      "variantIds": [],
+      "variantIds": [
+        "terminal",
+        "cinematic",
+        "blue-screen",
+        "nintendo"
+      ],
       "controlKeys": [
         "speed",
         "typeSpeed",
@@ -146,7 +151,41 @@
         "brightness",
         "opacity"
       ],
-      "variantControlKeys": {}
+      "variantControlKeys": {
+        "terminal": [
+          "speed",
+          "typeSpeed",
+          "motion",
+          "hue",
+          "saturation",
+          "brightness",
+          "opacity"
+        ],
+        "cinematic": [
+          "speed",
+          "motion",
+          "hue",
+          "saturation",
+          "brightness",
+          "opacity"
+        ],
+        "blue-screen": [
+          "speed",
+          "motion",
+          "hue",
+          "saturation",
+          "brightness",
+          "opacity"
+        ],
+        "nintendo": [
+          "speed",
+          "motion",
+          "hue",
+          "saturation",
+          "brightness",
+          "opacity"
+        ]
+      }
     },
     {
       "id": "energy-orb",
@@ -769,13 +808,23 @@
     },
     {
       "id": "woven-cloth",
-      "variantIds": [],
+      "variantIds": [
+        "woven-cloth",
+        "iridescent",
+        "atelier",
+        "washi"
+      ],
       "controlKeys": [
         "hue",
         "saturation",
         "brightness"
       ],
-      "variantControlKeys": {}
+      "variantControlKeys": {
+        "woven-cloth": [],
+        "iridescent": [],
+        "atelier": [],
+        "washi": []
+      }
     },
     {
       "id": "performance-gauges",
@@ -863,7 +912,12 @@
     },
     {
       "id": "animated-top-dock",
-      "variantIds": [],
+      "variantIds": [
+        "sable",
+        "modern",
+        "retro",
+        "glass"
+      ],
       "controlKeys": [
         "proximity",
         "spring",
@@ -872,7 +926,44 @@
         "heightGrowth",
         "drop"
       ],
-      "variantControlKeys": {}
+      "variantControlKeys": {
+        "sable": [
+          "proximity",
+          "spring",
+          "damping",
+          "widthGrowth",
+          "heightGrowth",
+          "drop"
+        ],
+        "modern": [
+          "proximity",
+          "spring",
+          "damping",
+          "widthGrowth",
+          "heightGrowth",
+          "drop"
+        ],
+        "retro": [
+          "pixelSize",
+          "levels",
+          "noise",
+          "scanlines",
+          "speed",
+          "proximity",
+          "widthGrowth"
+        ],
+        "glass": [
+          "particles",
+          "thickness",
+          "dispersion",
+          "specular",
+          "rim",
+          "drift",
+          "proximity",
+          "heightGrowth",
+          "drop"
+        ]
+      }
     },
     {
       "id": "sketchbook",
@@ -966,16 +1057,27 @@
     },
     {
       "id": "skeuomorphic-toggle",
-      "variantIds": [],
+      "variantIds": [
+        "skeuomorphic-toggle",
+        "modern",
+        "glass",
+        "shader"
+      ],
       "controlKeys": [
         "mode",
+        "speed",
         "size",
         "opacity",
         "hue",
         "saturation",
         "brightness"
       ],
-      "variantControlKeys": {}
+      "variantControlKeys": {
+        "skeuomorphic-toggle": [],
+        "modern": [],
+        "glass": [],
+        "shader": []
+      }
     },
     {
       "id": "matrix-field",

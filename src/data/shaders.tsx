@@ -75,7 +75,7 @@ const CommunityRenderer73 = lazy(() => import("../shaders/neuform-isolated/Neufo
 const CommunityRenderer74 = lazy(() => import("../shaders/neuform-isolated/NeuformCraftEffects").then((module) => ({ default: module.HalftoneFlow })));
 const CommunityRenderer75 = lazy(() => import("../shaders/neuform-isolated/NeuformCraftEffects").then((module) => ({ default: module.NeonTypography })));
 const CommunityRenderer76 = lazy(() => import("../shaders/neuform-isolated/NeuformCraftEffects").then((module) => ({ default: module.EngravedCertificate })));
-const CommunityRenderer77 = lazy(() => import("../shaders/neuform-isolated/NeuformCraftEffects").then((module) => ({ default: module.WovenCloth })));
+const CommunityRenderer77 = lazy(() => import("../shaders/woven-cloth/WovenCloth").then((module) => ({ default: module.WovenCloth })));
 const CommunityRenderer78 = lazy(() => import("../shaders/neuform-isolated/NeuformCraftEffects").then((module) => ({ default: module.NebulaBackground })));
 const CommunityRenderer79 = lazy(() => import("../shaders/neuform-isolated/NeuformCraftEffects").then((module) => ({ default: module.FluidFieldBackground })));
 const CommunityRenderer80 = lazy(() => import("../shaders/neuform-isolated/NeuformCraftEffects").then((module) => ({ default: module.EmberStorm })));
@@ -92,7 +92,7 @@ const CommunityRenderer90 = lazy(() => import("../shaders/neuform-isolated/Neufo
 const CommunityRenderer91 = lazy(() => import("../shaders/portal-field/PortalFieldCollection").then((module) => ({ default: module.PortalFieldCollection })));
 const CommunityRenderer92 = lazy(() => import("../shaders/neuform-isolated/NeuformBatchEffects").then((module) => ({ default: module.AmberHalftone })));
 const CommunityRenderer93 = lazy(() => import("../shaders/neuform-isolated/NeuformBatchEffects").then((module) => ({ default: module.DiagnosticsPanel })));
-const CommunityRenderer94 = lazy(() => import("../shaders/neuform-isolated/NeuformBatchEffects").then((module) => ({ default: module.SkeuomorphicToggle })));
+const CommunityRenderer94 = lazy(() => import("../shaders/skeuomorphic-toggle/SkeuomorphicToggleCollection").then((module) => ({ default: module.SkeuomorphicToggleCollection })));
 const CommunityRenderer95 = lazy(() => import("../shaders/laser/LaserCollection").then((module) => ({ default: module.LaserCollection })));
 const CommunityRenderer96 = lazy(() => import("../shaders/neuform-isolated/NeuformBatchEffects").then((module) => ({ default: module.GatewayFlow })));
 const CommunityRenderer97 = lazy(() => import("../shaders/neuform-isolated/NeuformBatchEffects").then((module) => ({ default: module.ConnectivityGraph })));
@@ -1679,14 +1679,44 @@ export const READY_SHADERS: readonly ReadyShader[] = [
       "terminal",
       "matrix",
       "scanlines",
+      "aperture grille",
+      "phosphor",
+      "curvature",
       "text texture",
       "retro",
-      "screen"
+      "screen",
+      "monitor",
+      "variants",
+      "cinematic",
+      "monotone",
+      "monochrome",
+      "film leader",
+      "academy leader",
+      "countdown",
+      "letterbox",
+      "timecode",
+      "blue screen",
+      "signal fault",
+      "vhs",
+      "static",
+      "glitch",
+      "tracking noise",
+      "dropout",
+      "nintendo",
+      "8-bit",
+      "nes",
+      "pixel art",
+      "pixel font",
+      "sprite",
+      "title screen",
+      "attract mode",
+      "arcade",
+      "game"
     ],
     "category": "Backgrounds",
     "label": "CRT",
     "thumbnail": "https://threeui.com/thumbnails/crt.jpg",
-    "description": "A complete Matrix-era boot terminal rendered to an offscreen text texture and passed through the exact authored curved CRT shader.",
+    "description": "One sharpened curved-glass CRT tube driving four screens: the Matrix-era boot terminal, a monochrome film leader, a noise-torn blue signal fault, and an 8-bit console title.",
     "runtime": "Raw WebGL + Canvas 2D",
     "origin": "Neuform export",
     "sourceCommit": "SHA-256 860a1eb1d4c9",
@@ -1694,10 +1724,11 @@ export const READY_SHADERS: readonly ReadyShader[] = [
       "ZION-Construct-Initialization (1).html — complete CRT background",
       "src/shaders/crt/crtRenderer.ts",
       "src/shaders/crt/crtShaders.ts",
+      "src/shaders/crt/crtScreens.ts",
       "src/shaders/crt/CrtBackground.tsx"
     ],
-    "passes": "2 — Canvas 2D boot texture + raw WebGL CRT composite",
-    "interaction": "Customizable boot speed, CRT motion, hue, brightness, and opacity",
+    "passes": "2 — Canvas 2D screen texture + raw WebGL CRT composite",
+    "interaction": "Selectable screen style plus customizable boot speed, CRT motion, hue, brightness, and opacity",
     "asset": "No external assets",
     "assetCount": 0,
     "importName": "CrtBackground",
@@ -1708,9 +1739,14 @@ export const READY_SHADERS: readonly ReadyShader[] = [
         "value": "Raw WebGL + Canvas 2D"
       },
       {
-        "name": "boot",
+        "name": "variants",
         "type": "fixed",
-        "value": "19 authored terminal rows"
+        "value": "Terminal | Cinematic | Blue Screen | Nintendo"
+      },
+      {
+        "name": "backing",
+        "type": "adaptive",
+        "value": "≤ 1920 px, ≤ 2 DPR"
       },
       {
         "name": "assets",
@@ -1781,6 +1817,281 @@ export const READY_SHADERS: readonly ReadyShader[] = [
         "step": 0.01,
         "digits": 2,
         "default": 1
+      }
+    ],
+    "variants": [
+      {
+        "id": "terminal",
+        "label": "Terminal",
+        "description": "The authored 19-row Zion boot log typing itself onto green phosphor, now resolved at the full backing resolution so the glyph cores stay crisp behind the grille.",
+        "thumbnail": "https://threeui.com/thumbnails/crt.jpg",
+        "preview": "https://threeui.com/previews/crt.webm",
+        "props": {
+          "variant": "terminal"
+        },
+        "controls": [
+          {
+            "key": "speed",
+            "label": "CRT speed",
+            "min": 0,
+            "max": 2,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          },
+          {
+            "key": "typeSpeed",
+            "label": "Type speed",
+            "min": 0,
+            "max": 3,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          },
+          {
+            "key": "motion",
+            "label": "Motion",
+            "min": 0,
+            "max": 2,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          },
+          {
+            "key": "hue",
+            "label": "Hue",
+            "min": -180,
+            "max": 180,
+            "step": 1,
+            "digits": 0,
+            "default": 0
+          },
+          {
+            "key": "saturation",
+            "label": "Saturation",
+            "min": 0,
+            "max": 2,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          },
+          {
+            "key": "brightness",
+            "label": "Brightness",
+            "min": 0.4,
+            "max": 1.8,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          },
+          {
+            "key": "opacity",
+            "label": "Opacity",
+            "min": 0.1,
+            "max": 1,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          }
+        ]
+      },
+      {
+        "id": "cinematic",
+        "label": "Cinematic",
+        "description": "A monotone academy leader: letterboxed frame, sweeping countdown dial, scrolling film perforations, registration marks, and a running 24 fps timecode graded to pure luminance.",
+        "thumbnail": "https://threeui.com/thumbnails/crt-cinematic.jpg",
+        "preview": "https://threeui.com/previews/crt-cinematic.webm",
+        "props": {
+          "variant": "cinematic"
+        },
+        "controls": [
+          {
+            "key": "speed",
+            "label": "CRT speed",
+            "min": 0,
+            "max": 2,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          },
+          {
+            "key": "motion",
+            "label": "Motion",
+            "min": 0,
+            "max": 2,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          },
+          {
+            "key": "hue",
+            "label": "Hue",
+            "min": -180,
+            "max": 180,
+            "step": 1,
+            "digits": 0,
+            "default": 0
+          },
+          {
+            "key": "saturation",
+            "label": "Saturation",
+            "min": 0,
+            "max": 2,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          },
+          {
+            "key": "brightness",
+            "label": "Brightness",
+            "min": 0.4,
+            "max": 1.8,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          },
+          {
+            "key": "opacity",
+            "label": "Opacity",
+            "min": 0.1,
+            "max": 1,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          }
+        ]
+      },
+      {
+        "id": "blue-screen",
+        "label": "Blue Screen",
+        "description": "A retro signal-fault panel on saturated broadcast blue, torn by shader-side transport noise: per-row jitter, a rolling dropout band, head-switching scramble, and heavy static.",
+        "thumbnail": "https://threeui.com/thumbnails/crt-blue-screen.jpg",
+        "preview": "https://threeui.com/previews/crt-blue-screen.webm",
+        "props": {
+          "variant": "blue-screen"
+        },
+        "controls": [
+          {
+            "key": "speed",
+            "label": "CRT speed",
+            "min": 0,
+            "max": 2,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          },
+          {
+            "key": "motion",
+            "label": "Motion",
+            "min": 0,
+            "max": 2,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          },
+          {
+            "key": "hue",
+            "label": "Hue",
+            "min": -180,
+            "max": 180,
+            "step": 1,
+            "digits": 0,
+            "default": 0
+          },
+          {
+            "key": "saturation",
+            "label": "Saturation",
+            "min": 0,
+            "max": 2,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          },
+          {
+            "key": "brightness",
+            "label": "Brightness",
+            "min": 0.4,
+            "max": 1.8,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          },
+          {
+            "key": "opacity",
+            "label": "Opacity",
+            "min": 0.1,
+            "max": 1,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          }
+        ]
+      },
+      {
+        "id": "nintendo",
+        "label": "Nintendo",
+        "description": "An 8-bit console title screen drawn on a 320×180 grid with a hand-authored 5×7 pixel font and nearest-neighbour upscale, so every sprite, brick, and letter lands on a hard pixel edge.",
+        "thumbnail": "https://threeui.com/thumbnails/crt-nintendo.jpg",
+        "preview": "https://threeui.com/previews/crt-nintendo.webm",
+        "props": {
+          "variant": "nintendo"
+        },
+        "controls": [
+          {
+            "key": "speed",
+            "label": "CRT speed",
+            "min": 0,
+            "max": 2,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          },
+          {
+            "key": "motion",
+            "label": "Motion",
+            "min": 0,
+            "max": 2,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          },
+          {
+            "key": "hue",
+            "label": "Hue",
+            "min": -180,
+            "max": 180,
+            "step": 1,
+            "digits": 0,
+            "default": 0
+          },
+          {
+            "key": "saturation",
+            "label": "Saturation",
+            "min": 0,
+            "max": 2,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          },
+          {
+            "key": "brightness",
+            "label": "Brightness",
+            "min": 0.4,
+            "max": 1.8,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          },
+          {
+            "key": "opacity",
+            "label": "Opacity",
+            "min": 0.1,
+            "max": 1,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          }
+        ]
       }
     ]
   }, component: CommunityRenderer8 },
@@ -12137,16 +12448,20 @@ export const READY_SHADERS: readonly ReadyShader[] = [
     "category": "Three.js",
     "label": "Woven Cloth",
     "thumbnail": "https://threeui.com/thumbnails/woven-cloth.jpg",
-    "description": "A Three.js woven-cloth simulation with Woven Cloth typography printed into its procedural textile so every letter deforms with the fabric.",
+    "description": "A Three.js woven-cloth simulation with Woven Cloth typography printed into its procedural textile so every letter deforms with the fabric, and three companion cloths woven around the same Verlet sheet.",
     "runtime": "Three.js r160",
-    "origin": "Neuform export",
+    "origin": "Neuform export with first-party companion cloths",
     "sourceCommit": "SHA-256 9bfd56ef7579",
     "sourceFiles": [
+      "src/shaders/woven-cloth/WovenCloth.tsx",
+      "src/shaders/neuform-isolated/NeuformCraftEffects.tsx",
       "src/shaders/neuform-isolated/sources/lumina-weavers-cloth.html",
-      "src/shaders/neuform-isolated/NeuformCraftEffects.tsx"
+      "src/shaders/woven-cloth/woven-cloth-iridescent.html",
+      "src/shaders/woven-cloth/woven-cloth-atelier.html",
+      "src/shaders/woven-cloth/woven-cloth-washi.html"
     ],
-    "passes": "1 Three.js cloth scene pass",
-    "interaction": "Typography deforms with the authored textile motion + optional final-frame palette",
+    "passes": "1 Three.js cloth scene pass per variant, plus a bright-pass bloom on the iridescent silk",
+    "interaction": "Variant selection; typography deforms with the authored textile motion + optional final-frame palette",
     "asset": "No owned binary assets",
     "assetCount": 0,
     "importName": "WovenCloth",
@@ -12154,7 +12469,17 @@ export const READY_SHADERS: readonly ReadyShader[] = [
       {
         "name": "source",
         "type": "fixed",
-        "value": "Exact Neuform HTML"
+        "value": "Exact Neuform HTML for the base cloth"
+      },
+      {
+        "name": "variant",
+        "type": "optional",
+        "value": "Woven Cloth | Iridescent Silk | Atelier Flag | Washi Noren"
+      },
+      {
+        "name": "companions",
+        "type": "original",
+        "value": "Three first-party documents; the packaged export is untouched"
       },
       {
         "name": "focus",
@@ -12199,6 +12524,46 @@ export const READY_SHADERS: readonly ReadyShader[] = [
         "step": 0.01,
         "digits": 2,
         "default": 1
+      }
+    ],
+    "variants": [
+      {
+        "id": "woven-cloth",
+        "label": "Woven Cloth",
+        "description": "The packaged Neuform export, untouched: an ivory banner with a crimson hem and the Woven Cloth wordmark printed into the weave, pinned along its top edge.",
+        "thumbnail": "https://threeui.com/thumbnails/woven-cloth.jpg",
+        "preview": "https://threeui.com/previews/woven-cloth.webm",
+        "props": {}
+      },
+      {
+        "id": "iridescent",
+        "label": "Iridescent Silk",
+        "description": "A five-harness satin under a painted studio environment: a thin-film interference layer whose thickness sweeps one full order across the width, so the colour travels over the folds while the wordmark stays a tone-on-tone jacquard.",
+        "thumbnail": "https://threeui.com/thumbnails/woven-cloth-iridescent.jpg",
+        "preview": "https://threeui.com/previews/woven-cloth-iridescent.webm",
+        "props": {
+          "variant": "iridescent"
+        }
+      },
+      {
+        "id": "atelier",
+        "label": "Atelier Flag",
+        "description": "The same sheet cut and sewn: three linen panels joined by flat-felled seams and topstitching, an indigo heading tape on the hoist with brass grommets and a mast, hemmed at the fly, and a woven label tacked on at the corner.",
+        "thumbnail": "https://threeui.com/thumbnails/woven-cloth-atelier.jpg",
+        "preview": "https://threeui.com/previews/woven-cloth-atelier.webm",
+        "props": {
+          "variant": "atelier"
+        }
+      },
+      {
+        "id": "washi",
+        "label": "Washi Noren",
+        "description": "An indigo-dyed kozo noren on a wooden rod, backlit through a shoji: laid and chain lines from the papermaking screen, a torn deckle edge cut by an alpha mask, and slits that free three panels to sway on their own.",
+        "thumbnail": "https://threeui.com/thumbnails/woven-cloth-washi.jpg",
+        "preview": "https://threeui.com/previews/woven-cloth-washi.webm",
+        "props": {
+          "variant": "washi"
+        }
       }
     ]
   }, component: CommunityRenderer77 },
@@ -13167,39 +13532,78 @@ export const READY_SHADERS: readonly ReadyShader[] = [
       "dock",
       "spring",
       "glass",
+      "liquid glass",
       "proximity",
       "responsive",
       "menu",
-      "animated"
+      "top menu",
+      "header",
+      "navbar",
+      "command bar",
+      "logo",
+      "cta",
+      "animated",
+      "modern",
+      "retro",
+      "pixel",
+      "pixel art",
+      "dither",
+      "shader",
+      "glsl",
+      "webgl",
+      "noise",
+      "threejs",
+      "three.js",
+      "3d",
+      "refraction",
+      "dispersion",
+      "particles",
+      "variants",
+      "hover",
+      "pointer",
+      "interactive",
+      "dark mode"
     ],
     "category": "CSS",
     "label": "Animated Top Dock",
     "thumbnail": "https://threeui.com/thumbnails/animated-top-dock.jpg",
-    "description": "Sable’s top navigation dock with its authored downward spring expansion, proximity field, glass layers, focus behavior, and active menu state.",
-    "runtime": "DOM + CSS",
-    "origin": "Sable V1",
+    "description": "Sable’s proximity-spring menu in four fits: the authored centred dock, a modern command bar, a fitted pixel-terminal strip, and a vertical refracting Three.js glass rail.",
+    "runtime": "DOM + CSS + WebGL + Three.js r128",
+    "origin": "Sable V1 + ThreeUI original",
     "sourceCommit": "5a736cd3c1f6f19802f61ebb10e1701b9f7aa26e",
     "sourceFiles": [
       "ascii-page-transition-v1.html — exact top menu dock",
       "src/shaders/animated-top-dock/topDockController.ts",
       "src/shaders/animated-top-dock/AnimatedTopDock.tsx",
+      "src/shaders/animated-top-dock/retroPixelField.ts",
+      "src/shaders/animated-top-dock/glassParticleField.ts",
       "src/shaders/fonts/fragment-mono.woff2"
     ],
-    "passes": "1 spring layout pass across 6 dock items",
-    "interaction": "Pointer proximity, keyboard focus, active selection, reduced motion, and mobile static mode",
+    "passes": "1 spring layout pass across every dock item, plus 1 shader pass on the pixel and glass variants",
+    "interaction": "Pointer proximity, keyboard focus, active selection, pointer parallax, reduced motion, and mobile static mode",
     "asset": "Exact embedded Fragment Mono font extracted from the authored source",
     "assetCount": 1,
     "importName": "AnimatedTopDock",
     "contract": [
       {
         "name": "renderer",
-        "type": "host",
-        "value": "DOM + CSS"
+        "type": "variant",
+        "value": "DOM + CSS, raw WebGL, or Three.js r128"
+      },
+      {
+        "name": "variant",
+        "type": "optional",
+        "value": "sable | modern | retro | glass"
+      },
+      {
+        "name": "fit",
+        "type": "variant",
+        "value": "centred | horizontal | vertical"
       },
       {
         "name": "items",
         "type": "fixed",
-        "value": "1 logo + 5 menu items"
+        "value": "1 brand + 5 menu items"
       },
       {
         "name": "proximity",
@@ -13271,6 +13675,308 @@ export const READY_SHADERS: readonly ReadyShader[] = [
         "step": 0.5,
         "digits": 1,
         "default": 3.5
+      }
+    ],
+    "variants": [
+      {
+        "id": "sable",
+        "label": "Sable Dock",
+        "description": "The authored Sable dock: a centred glass capsule whose items spring downward and widen as the pointer crosses them.",
+        "thumbnail": "https://threeui.com/thumbnails/animated-top-dock.jpg",
+        "preview": "https://threeui.com/previews/animated-top-dock.webm",
+        "props": {
+          "variant": "sable"
+        },
+        "controls": [
+          {
+            "key": "proximity",
+            "label": "Proximity",
+            "min": 60,
+            "max": 220,
+            "step": 1,
+            "digits": 0,
+            "default": 122
+          },
+          {
+            "key": "spring",
+            "label": "Spring",
+            "min": 0.05,
+            "max": 0.35,
+            "step": 0.01,
+            "digits": 2,
+            "default": 0.19
+          },
+          {
+            "key": "damping",
+            "label": "Damping",
+            "min": 0.4,
+            "max": 0.9,
+            "step": 0.01,
+            "digits": 2,
+            "default": 0.7
+          },
+          {
+            "key": "widthGrowth",
+            "label": "Width growth",
+            "min": 4,
+            "max": 32,
+            "step": 1,
+            "digits": 0,
+            "default": 17
+          },
+          {
+            "key": "heightGrowth",
+            "label": "Height growth",
+            "min": 4,
+            "max": 28,
+            "step": 1,
+            "digits": 0,
+            "default": 16
+          },
+          {
+            "key": "drop",
+            "label": "Drop",
+            "min": 0,
+            "max": 12,
+            "step": 0.5,
+            "digits": 1,
+            "default": 3.5
+          }
+        ]
+      },
+      {
+        "id": "modern",
+        "label": "Command Bar",
+        "description": "An inset modern header: wordmark on the left, the proximity dock centred on the bar’s midline, and a paired sign-in and gradient call to action on the right.",
+        "thumbnail": "https://threeui.com/thumbnails/animated-top-dock-modern.jpg",
+        "preview": "https://threeui.com/previews/animated-top-dock-modern.webm",
+        "props": {
+          "variant": "modern"
+        },
+        "controls": [
+          {
+            "key": "proximity",
+            "label": "Proximity",
+            "min": 60,
+            "max": 220,
+            "step": 1,
+            "digits": 0,
+            "default": 122
+          },
+          {
+            "key": "spring",
+            "label": "Spring",
+            "min": 0.05,
+            "max": 0.35,
+            "step": 0.01,
+            "digits": 2,
+            "default": 0.19
+          },
+          {
+            "key": "damping",
+            "label": "Damping",
+            "min": 0.4,
+            "max": 0.9,
+            "step": 0.01,
+            "digits": 2,
+            "default": 0.7
+          },
+          {
+            "key": "widthGrowth",
+            "label": "Width growth",
+            "min": 4,
+            "max": 32,
+            "step": 1,
+            "digits": 0,
+            "default": 17
+          },
+          {
+            "key": "heightGrowth",
+            "label": "Height growth",
+            "min": 4,
+            "max": 28,
+            "step": 1,
+            "digits": 0,
+            "default": 16
+          },
+          {
+            "key": "drop",
+            "label": "Drop",
+            "min": 0,
+            "max": 12,
+            "step": 0.5,
+            "digits": 1,
+            "default": 3.5
+          }
+        ]
+      },
+      {
+        "id": "retro",
+        "label": "Pixel Terminal",
+        "description": "A fitted terminal strip: the menu cells own the whole bar and trade width with each other, over a WebGL noise field quantised through an 8×8 ordered dither into an eight-stop dusk palette.",
+        "thumbnail": "https://threeui.com/thumbnails/animated-top-dock-retro.jpg",
+        "preview": "https://threeui.com/previews/animated-top-dock-retro.webm",
+        "props": {
+          "variant": "retro"
+        },
+        "controls": [
+          {
+            "key": "pixelSize",
+            "label": "Pixel size",
+            "min": 1,
+            "max": 10,
+            "step": 1,
+            "digits": 0,
+            "default": 4
+          },
+          {
+            "key": "levels",
+            "label": "Palette steps",
+            "min": 2,
+            "max": 8,
+            "step": 1,
+            "digits": 0,
+            "default": 7
+          },
+          {
+            "key": "noise",
+            "label": "Noise",
+            "min": 0,
+            "max": 2,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          },
+          {
+            "key": "scanlines",
+            "label": "Scanlines",
+            "min": 0,
+            "max": 0.8,
+            "step": 0.01,
+            "digits": 2,
+            "default": 0.32
+          },
+          {
+            "key": "speed",
+            "label": "Speed",
+            "min": 0,
+            "max": 3,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          },
+          {
+            "key": "proximity",
+            "label": "Proximity",
+            "min": 60,
+            "max": 220,
+            "step": 1,
+            "digits": 0,
+            "default": 132
+          },
+          {
+            "key": "widthGrowth",
+            "label": "Cell expand",
+            "min": 0,
+            "max": 160,
+            "step": 1,
+            "digits": 0,
+            "default": 54
+          }
+        ]
+      },
+      {
+        "id": "glass",
+        "label": "Liquid Glass",
+        "description": "A vertical glass rail whose proximity field runs down the y axis, over a Three.js bead field that refracts the backdrop in screen space with per-channel dispersion and a specular rim.",
+        "thumbnail": "https://threeui.com/thumbnails/animated-top-dock-glass.jpg",
+        "preview": "https://threeui.com/previews/animated-top-dock-glass.webm",
+        "props": {
+          "variant": "glass"
+        },
+        "controls": [
+          {
+            "key": "particles",
+            "label": "Beads",
+            "min": 4,
+            "max": 34,
+            "step": 1,
+            "digits": 0,
+            "default": 22
+          },
+          {
+            "key": "thickness",
+            "label": "Thickness",
+            "min": 0.02,
+            "max": 0.3,
+            "step": 0.005,
+            "digits": 3,
+            "default": 0.115
+          },
+          {
+            "key": "dispersion",
+            "label": "Dispersion",
+            "min": 0,
+            "max": 0.18,
+            "step": 0.005,
+            "digits": 3,
+            "default": 0.05
+          },
+          {
+            "key": "specular",
+            "label": "Specular",
+            "min": 0,
+            "max": 2,
+            "step": 0.01,
+            "digits": 2,
+            "default": 0.85
+          },
+          {
+            "key": "rim",
+            "label": "Rim",
+            "min": 0,
+            "max": 1.4,
+            "step": 0.01,
+            "digits": 2,
+            "default": 0.5
+          },
+          {
+            "key": "drift",
+            "label": "Drift",
+            "min": 0,
+            "max": 3,
+            "step": 0.01,
+            "digits": 2,
+            "default": 1
+          },
+          {
+            "key": "proximity",
+            "label": "Proximity",
+            "min": 16,
+            "max": 160,
+            "step": 1,
+            "digits": 0,
+            "default": 44
+          },
+          {
+            "key": "heightGrowth",
+            "label": "Row growth",
+            "min": 0,
+            "max": 40,
+            "step": 1,
+            "digits": 0,
+            "default": 20
+          },
+          {
+            "key": "drop",
+            "label": "Lean",
+            "min": 0,
+            "max": 26,
+            "step": 0.5,
+            "digits": 1,
+            "default": 11
+          }
+        ]
       }
     ]
   }, component: CommunityRenderer85 },
@@ -14731,19 +15437,27 @@ export const READY_SHADERS: readonly ReadyShader[] = [
     "category": "UI Elements",
     "label": "Skeuomorphic Toggle",
     "thumbnail": "https://threeui.com/thumbnails/skeuomorphic-toggle.jpg",
-    "description": "A tactile skeuomorphic toggle with a sliding on/off thumb that automatically matches light and dark appearances, isolated without the surrounding card.",
-    "runtime": "DOM/CSS",
-    "origin": "Neuform export",
+    "description": "Four takes on one switch: the preserved tactile skeuomorphic export plus flat modern, Three.js glass, and shader-lit treatments, each matching light and dark appearances automatically.",
+    "runtime": "DOM/CSS + Three.js + Raw WebGL",
+    "origin": "Preserved Neuform export + ThreeUI original variants",
     "sourceCommit": "SHA-256 3e19e7fec9ac",
     "sourceFiles": [
       "src/shaders/neuform-isolated/sources/skeuomorphic-toggle.html",
-      "src/shaders/neuform-isolated/NeuformBatchEffects.tsx"
+      "src/shaders/neuform-isolated/NeuformBatchEffects.tsx",
+      "src/shaders/skeuomorphic-toggle/SkeuomorphicToggleCollection.tsx",
+      "src/shaders/skeuomorphic-toggle/ModernToggle.tsx",
+      "src/shaders/skeuomorphic-toggle/GlassToggle.tsx",
+      "src/shaders/skeuomorphic-toggle/glassToggleScene.ts",
+      "src/shaders/skeuomorphic-toggle/ShaderToggle.tsx",
+      "src/shaders/skeuomorphic-toggle/shaderToggleScene.ts",
+      "src/shaders/skeuomorphic-toggle/shaderToggleGlsl.ts",
+      "src/shaders/skeuomorphic-toggle/toggleMode.ts"
     ],
-    "passes": "1 isolated source pass",
-    "interaction": "Automatic site/system appearance with explicit light and dark overrides, plus customizable size, opacity, and palette",
+    "passes": "1 selected toggle pass",
+    "interaction": "Click or keyboard switching, pointer-lit 3D variants, automatic site/system appearance with explicit light and dark overrides, plus customizable speed, size, opacity, and palette",
     "asset": "No owned binary assets",
     "assetCount": 0,
-    "importName": "SkeuomorphicToggle",
+    "importName": "SkeuomorphicToggleCollection",
     "contract": [
       {
         "name": "source",
@@ -14818,6 +15532,15 @@ export const READY_SHADERS: readonly ReadyShader[] = [
         ]
       },
       {
+        "key": "speed",
+        "label": "Speed",
+        "min": 0,
+        "max": 3,
+        "step": 0.01,
+        "digits": 2,
+        "default": 1
+      },
+      {
         "key": "size",
         "label": "Size",
         "min": 0.35,
@@ -14861,6 +15584,46 @@ export const READY_SHADERS: readonly ReadyShader[] = [
         "step": 0.01,
         "digits": 2,
         "default": 1
+      }
+    ],
+    "variants": [
+      {
+        "id": "skeuomorphic-toggle",
+        "label": "Skeuomorphic",
+        "description": "The preserved packaged export: a tactile pill with an inset track and a raised sliding thumb.",
+        "thumbnail": "https://threeui.com/thumbnails/skeuomorphic-toggle.jpg",
+        "preview": "https://threeui.com/previews/skeuomorphic-toggle.webm",
+        "props": {}
+      },
+      {
+        "id": "modern",
+        "label": "Modern",
+        "description": "A flat, hairline-edged switch with a stretching knob, a check-to-dash mark, and one soft accent pool.",
+        "thumbnail": "https://threeui.com/thumbnails/skeuomorphic-toggle-modern.jpg",
+        "preview": "https://threeui.com/previews/skeuomorphic-toggle-modern.webm",
+        "props": {
+          "variant": "modern"
+        }
+      },
+      {
+        "id": "glass",
+        "label": "Glass",
+        "description": "An Apple-style Three.js capsule in transmissive glass, refracting a drifting colour field around a lit core.",
+        "thumbnail": "https://threeui.com/thumbnails/skeuomorphic-toggle-glass.jpg",
+        "preview": "https://threeui.com/previews/skeuomorphic-toggle-glass.webm",
+        "props": {
+          "variant": "glass"
+        }
+      },
+      {
+        "id": "shader",
+        "label": "Shader",
+        "description": "A raw-WebGL switch drawn entirely in one fragment pass: plasma interior, streaming sparks, chromatic bloom, and a pointer-lit thumb.",
+        "thumbnail": "https://threeui.com/thumbnails/skeuomorphic-toggle-shader.jpg",
+        "preview": "https://threeui.com/previews/skeuomorphic-toggle-shader.webm",
+        "props": {
+          "variant": "shader"
+        }
       }
     ]
   }, component: CommunityRenderer94 },

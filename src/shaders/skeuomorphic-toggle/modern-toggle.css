@@ -1,0 +1,216 @@
+.modern-toggle,
+.modern-toggle *,
+.modern-toggle *::before,
+.modern-toggle *::after {
+  box-sizing: border-box;
+}
+
+.modern-toggle {
+  --modern-toggle-scale: 1;
+  --modern-toggle-hue: 0deg;
+  --modern-toggle-saturation: 1;
+  --modern-toggle-brightness: 1;
+  --modern-toggle-track: #e6e8ec;
+  --modern-toggle-track-on: #2f6bff;
+  --modern-toggle-edge: rgba(9, 12, 20, 0.09);
+  --modern-toggle-edge-on: rgba(9, 12, 20, 0.06);
+  --modern-toggle-thumb: #ffffff;
+  --modern-toggle-thumb-shadow: 0 1px 1px rgba(9, 12, 20, 0.1), 0 6px 14px -4px rgba(9, 12, 20, 0.28);
+  --modern-toggle-mark: #2f6bff;
+  --modern-toggle-caption: rgba(15, 20, 32, 0.42);
+  --modern-toggle-caption-on: rgba(15, 20, 32, 0.7);
+  --modern-toggle-focus: rgba(47, 107, 255, 0.32);
+  --modern-toggle-stage: #f7f8fa;
+  --modern-toggle-stage-top: #ffffff;
+  --modern-toggle-stage-bottom: #eceff4;
+  --modern-toggle-halo: rgba(47, 107, 255, 0.1);
+  position: relative;
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  place-items: center;
+  overflow: hidden;
+  isolation: isolate;
+  container-type: size;
+  background: linear-gradient(180deg, var(--modern-toggle-stage-top) 0%, var(--modern-toggle-stage) 62%, var(--modern-toggle-stage-bottom) 100%);
+  color-scheme: light;
+  filter: hue-rotate(var(--modern-toggle-hue)) saturate(var(--modern-toggle-saturation)) brightness(var(--modern-toggle-brightness));
+  font-family: ui-sans-serif, -apple-system, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.modern-toggle[data-mode="dark"] {
+  --modern-toggle-track: #22262f;
+  --modern-toggle-track-on: #3b7bff;
+  --modern-toggle-edge: rgba(255, 255, 255, 0.1);
+  --modern-toggle-edge-on: rgba(255, 255, 255, 0.16);
+  --modern-toggle-thumb: #f2f4f8;
+  --modern-toggle-thumb-shadow: 0 1px 1px rgba(0, 0, 0, 0.5), 0 8px 18px -6px rgba(0, 0, 0, 0.7);
+  --modern-toggle-mark: #1f5cf0;
+  --modern-toggle-caption: rgba(232, 237, 247, 0.4);
+  --modern-toggle-caption-on: rgba(232, 237, 247, 0.74);
+  --modern-toggle-focus: rgba(94, 145, 255, 0.4);
+  --modern-toggle-stage: #0c0e13;
+  --modern-toggle-stage-top: #14171f;
+  --modern-toggle-stage-bottom: #06070a;
+  --modern-toggle-halo: rgba(59, 123, 255, 0.16);
+  color-scheme: dark;
+}
+
+/* One soft pool of accent light, so the switch is not floating on a flat fill. */
+.modern-toggle__halo {
+  position: absolute;
+  width: min(72cqw, 620px);
+  height: min(72cqh, 380px);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--modern-toggle-halo), transparent 72%);
+  opacity: 0;
+  transform: scale(0.86);
+  transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.32, 0.72, 0, 1);
+  pointer-events: none;
+}
+
+.modern-toggle[data-state="on"] .modern-toggle__halo {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.modern-toggle__stack {
+  position: relative;
+  display: grid;
+  gap: clamp(12px, 2.4cqh, 24px);
+  justify-items: center;
+  transform: scale(var(--modern-toggle-scale));
+}
+
+/* Every measurement below is a share of the switch's own width, so the control
+   keeps its proportions at any stage size. */
+.modern-toggle__switch {
+  position: relative;
+  display: block;
+  width: clamp(104px, min(18cqw, 33cqh), 330px);
+  aspect-ratio: 44 / 25;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  container-type: inline-size;
+  -webkit-tap-highlight-color: transparent;
+  appearance: none;
+}
+
+.modern-toggle__switch:focus-visible {
+  outline: none;
+}
+
+.modern-toggle__track {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--modern-toggle-track);
+  box-shadow: inset 0 0 0 1px var(--modern-toggle-edge);
+  transition: background 0.46s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.46s ease;
+}
+
+.modern-toggle[data-state="on"] .modern-toggle__track {
+  background: var(--modern-toggle-track-on);
+  box-shadow: inset 0 0 0 1px var(--modern-toggle-edge-on);
+}
+
+.modern-toggle__switch:focus-visible .modern-toggle__track {
+  box-shadow: inset 0 0 0 1px var(--modern-toggle-edge), 0 0 0 4px var(--modern-toggle-focus);
+}
+
+.modern-toggle[data-state="on"] .modern-toggle__switch:focus-visible .modern-toggle__track {
+  box-shadow: inset 0 0 0 1px var(--modern-toggle-edge-on), 0 0 0 4px var(--modern-toggle-focus);
+}
+
+/* The knob's transform is driven by a spring in JS, not by a transition —
+   a CSS transition cannot squash on the way and settle on arrival, so the
+   stretch had to be an :active snap that fought the travel. */
+.modern-toggle__thumb {
+  position: absolute;
+  top: 4.6cqw;
+  left: 4.6cqw;
+  width: 47.6cqw;
+  height: 47.6cqw;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--modern-toggle-thumb);
+  box-shadow: var(--modern-toggle-thumb-shadow);
+  transform: translate3d(0, 0, 0);
+  transform-origin: center;
+  will-change: transform;
+}
+
+.modern-toggle__mark {
+  position: relative;
+  width: 36%;
+  height: 36%;
+  color: var(--modern-toggle-mark);
+}
+
+.modern-toggle__mark svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: opacity 0.28s ease, transform 0.34s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.modern-toggle__mark svg[data-mark="check"] {
+  opacity: 0;
+  transform: scale(0.6) rotate(-18deg);
+}
+
+.modern-toggle__mark svg[data-mark="dash"] {
+  opacity: 0.34;
+  transform: scale(1);
+}
+
+.modern-toggle[data-state="on"] .modern-toggle__mark svg[data-mark="check"] {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+.modern-toggle[data-state="on"] .modern-toggle__mark svg[data-mark="dash"] {
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+.modern-toggle__caption {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55em;
+  font-size: clamp(11px, 0.85cqw, 16px);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--modern-toggle-caption);
+  transition: color 0.4s ease;
+}
+
+.modern-toggle[data-state="on"] .modern-toggle__caption {
+  color: var(--modern-toggle-caption-on);
+}
+
+.modern-toggle__caption b {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modern-toggle__halo,
+  .modern-toggle__track,
+  .modern-toggle__mark svg,
+  .modern-toggle__caption {
+    transition-duration: 0.01ms;
+  }
+}

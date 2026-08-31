@@ -1,0 +1,108 @@
+.glass-toggle,
+.glass-toggle *,
+.glass-toggle *::before,
+.glass-toggle *::after {
+  box-sizing: border-box;
+}
+
+.glass-toggle {
+  --glass-toggle-hue: 0deg;
+  --glass-toggle-saturation: 1;
+  --glass-toggle-brightness: 1;
+  --glass-toggle-stage: #eef1f6;
+  --glass-toggle-caption: rgba(17, 22, 34, 0.5);
+  --glass-toggle-caption-on: rgba(17, 22, 34, 0.78);
+  --glass-toggle-focus: rgba(58, 120, 255, 0.45);
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  isolation: isolate;
+  container-type: size;
+  background: var(--glass-toggle-stage);
+  color-scheme: light;
+  filter: hue-rotate(var(--glass-toggle-hue)) saturate(var(--glass-toggle-saturation)) brightness(var(--glass-toggle-brightness));
+  font-family: ui-sans-serif, -apple-system, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.glass-toggle[data-mode="dark"] {
+  --glass-toggle-stage: #08090d;
+  --glass-toggle-caption: rgba(233, 238, 250, 0.46);
+  --glass-toggle-caption-on: rgba(233, 238, 250, 0.82);
+  --glass-toggle-focus: rgba(122, 168, 255, 0.5);
+  color-scheme: dark;
+}
+
+.glass-toggle__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* A real control sitting exactly over the rendered pill, so the scene stays
+   keyboard- and screen-reader-operable. */
+.glass-toggle__switch {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 200px;
+  height: 112px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  appearance: none;
+}
+
+.glass-toggle__switch:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--glass-toggle-focus);
+}
+
+.glass-toggle__caption {
+  position: absolute;
+  left: 50%;
+  /* The control keeps 13% of the stage height, so the caption tracks the centre
+     rather than the floor — otherwise it drifts away in a tall frame. */
+  top: calc(50% + max(52px, 11cqh));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: baseline;
+  gap: 0.55em;
+  margin: 0;
+  font-size: clamp(11px, 1.9cqw, 14px);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--glass-toggle-caption);
+  transition: color 0.45s ease;
+  pointer-events: none;
+}
+
+.glass-toggle[data-state="on"] .glass-toggle__caption {
+  color: var(--glass-toggle-caption-on);
+}
+
+.glass-toggle__caption b {
+  font-weight: 500;
+}
+
+.glass-toggle__fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--glass-toggle-caption);
+}

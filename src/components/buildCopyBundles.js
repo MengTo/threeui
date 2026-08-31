@@ -41,17 +41,36 @@ function fullSourceSection(files) {
   ];
 }
 
-function sourceReferenceSection(files, sourceBaseUrl, sourcePageUrl) {
-  const primary = files.find((file) => ["canonical-source", "scene-source"].includes(file.role)) ?? files[0];
-  if (!primary) return ["No source file is registered for this component.", ""];
-
-  const filename = primary.path.split("/").at(-1) ?? primary.path;
-  const directUrl = primary.sourceUrl ? new URL(primary.sourceUrl, sourceBaseUrl).href : sourcePageUrl;
-
+function sourceManifestSection(files) {
+  if (files.length === 0) return ["No source file is registered for this component.", ""];
   return [
-    `### Source code: [${filename}](${directUrl})`,
+    ...files.map((file) => `- \`${file.path}\` — ${file.role} · SHA-256 \`${file.sha256}\``),
     "",
   ];
+}
+
+function directHtmlSource(files, sourceBaseUrl) {
+  const file = files.find((candidate) => {
+    if (!["canonical-source", "scene-source"].includes(candidate.role) || !candidate.sourceUrl) return false;
+    try {
+      return new URL(candidate.sourceUrl, sourceBaseUrl).pathname.toLowerCase().endsWith(".html");
+    } catch {
+      return false;
+    }
+  });
+  if (!file) return null;
+  return {
+    filename: file.path.split("/").at(-1) ?? file.path,
+    url: new URL(file.sourceUrl, sourceBaseUrl).href,
+  };
+}
+
+export function sourceBundleCandidateIds({ shaderId, activeVariantId, directVariantId }) {
+  return [...new Set([
+    directVariantId,
+    activeVariantId ? `${shaderId}--${activeVariantId}` : undefined,
+    shaderId,
+  ].filter(Boolean))];
 }
 
 export function buildPromptSourceFallback(shader) {
@@ -81,13 +100,33 @@ export function buildPromptSourceFallback(shader) {
   }];
 }
 
-export function buildCodeBundle({ shader, files, assets }) {
+/**
+ * @param {{
+ *   shader: any;
+ *   files: any[];
+ *   assets: any[];
+ *   usage?: string;
+ *   activeVariant?: any;
+ * }} options
+ */
+export function buildCodeBundle(options) {
+  const { shader, files, assets, usage, activeVariant } = options;
+  const normalizedUsage = usage ?? `<${shader.importName} />`;
+  const usageFence = markdownFence(normalizedUsage);
+  const variantLabel = activeVariant ? ` — ${activeVariant.label}` : "";
   return [
-    `# ${shader.label} — Complete source`,
+    `# ${shader.label}${variantLabel} — Complete source`,
     "",
     `Component: \`${shader.importName}\``,
+    ...(activeVariant ? [`Variant: **${activeVariant.label}** (\`${activeVariant.id}\`)`] : []),
     `Runtime: ${shader.runtime}`,
     `Source revision: \`${shader.sourceCommit}\``,
+    "",
+    "## Current configured usage",
+    "",
+    `${usageFence}tsx`,
+    normalizedUsage,
+    usageFence,
     "",
     "## Required assets",
     "",
@@ -98,28 +137,87 @@ export function buildCodeBundle({ shader, files, assets }) {
   ].join("\n");
 }
 
-export function buildCopyPrompt({ shader, files, activeVariant, sourceBaseUrl, sourcePageUrl }) {
+/**
+ * @param {{
+ *   shader: any;
+ *   files: any[];
+ *   assets?: any[];
+ *   usage?: string;
+ *   activeVariant?: any;
+ *   sourceBaseUrl?: string;
+ *   sourcePageUrl?: string;
+ *   sourceBundleUrl?: string;
+ *   includeInlineSource?: boolean;
+ * }} options
+ */
+export function buildCopyPrompt(options) {
+  const {
+    shader,
+    files,
+    assets,
+    usage,
+    activeVariant,
+    sourceBaseUrl,
+    sourcePageUrl,
+    sourceBundleUrl,
+    includeInlineSource = false,
+  } = options;
+  const normalizedAssets = assets ?? [];
+  const normalizedUsage = usage ?? `<${shader.importName} />`;
   const variantLines = activeVariant
     ? [
-        `### Variant: ${activeVariant.label}`,
+        `Variant: **${activeVariant.label}** (\`${activeVariant.id}\`)`,
       ]
     : [];
+  const referenceBrief = activeVariant?.description ?? shader.description;
+  const canonicalHtml = directHtmlSource(files, sourceBaseUrl ?? sourcePageUrl);
+  const sourceLinks = [
+    ...(canonicalHtml ? [`Canonical HTML: [${canonicalHtml.filename}](${canonicalHtml.url})`] : []),
+    ...(sourceBundleUrl ? [`Complete registered source bundle: [${sourceBundleUrl}](${sourceBundleUrl})`] : []),
+  ];
+  const usageFence = markdownFence(normalizedUsage);
+  const inlineFiles = includeInlineSource ? files.filter((file) => typeof file.code === "string") : [];
+  const unavailableSourceMessage = inlineFiles.length > 0
+    ? "This is protected source supplied by the authenticated ThreeUI page in the inline bundle below."
+    : "The exact source is available only at the registered local paths below. Read those files from the current repository; if they are unavailable, stop instead of recreating them.";
+
   return [
-    `## Use the <${shader.importName} /> component from ThreeUI as a reference`,
+    `# Integrate <${shader.importName} /> from ThreeUI using its exact source`,
     "",
-    "You are working in an existing application. Use the following ThreeUI example as a visual, interaction, and implementation reference for the requested experience.",
+    "You are working in an existing application. Implement this component from the exact source linked or included below. Do not recreate it from the preview, screenshot, description, or filename.",
     "",
-    `### Component: ${shader.importName}`,
+    `Component: \`${shader.importName}\``,
     ...variantLines,
-    `### Runtime: ${shader.runtime}`,
-    ...sourceReferenceSection(files, sourceBaseUrl, sourcePageUrl),
-    "---",
+    `Runtime: ${shader.runtime}`,
+    ...(shader.sourceCommit ? [`Source revision: \`${shader.sourceCommit}\``] : []),
+    ...(referenceBrief ? ["", "Reference brief:", referenceBrief] : []),
     "",
-    "### Reference brief",
+    "## Current configured usage",
     "",
-    shader.description,
+    `${usageFence}tsx`,
+    normalizedUsage,
+    usageFence,
     "",
-    "Review the linked source before making changes. Study its structure, styling, composition, motion, interactions, responsive behavior, and implementation details. Adapt the relevant ideas to the destination project's existing stack, content, and design language. Build the result directly in that project rather than embedding the reference URL.",
+    "## Exact implementation source",
+    "",
+    ...(sourceLinks.length > 0 ? [...sourceLinks, ""] : [unavailableSourceMessage, ""]),
+    "Required registered files:",
+    "",
+    ...sourceManifestSection(files),
+    ...(normalizedAssets.length > 0 ? ["Required binary assets:", "", ...assetSection(normalizedAssets)] : []),
+    "## Implementation requirements",
+    "",
+    `- Preserve the authored structure, styling, shaders, motion, interactions, responsive behavior, dependencies, and asset paths described by the source.`,
+    `- Use the configured \`<${shader.importName} />\` usage above, including the selected variant and props.`,
+    "- Build directly in the destination project. Do not embed the ThreeUI documentation page and do not approximate the result from its rendered appearance.",
+    "- Fetch and read the complete source before editing. If the source cannot be retrieved, stop and report that instead of recreating it.",
+    "- After implementation, verify the rendered result and its interactions in the browser.",
+    "",
+    ...(inlineFiles.length > 0 ? [
+      "## Authenticated full implementation source",
+      "",
+      ...fullSourceSection(inlineFiles),
+    ] : []),
     "",
   ].join("\n");
 }

@@ -1,5 +1,6 @@
 import { shaderRoutePath, STATIC_ROUTE_PATHS } from "./routes.js";
-import { browseRouteContent, browseRouteFaqs } from "./browseTaxonomy.js";
+import { browseRouteContent, browseRouteFaqs, isIndexableBrowseTag } from "./browseTaxonomy.js";
+import { resolvePublicMediaUrl } from "./mediaUrls.js";
 
 export const SITE_TITLE = "Three.js Components & Interactive Shaders";
 export const SITE_DESCRIPTION = "Browse high-quality Three.js hero components, 3D shaders, prompts, and templates with customizable variants. Framework-agnostic. Copy, paste, and ship.";
@@ -35,6 +36,10 @@ function absoluteUrl(origin, path) {
   return new URL(path, `${origin}/`).href;
 }
 
+function absoluteMediaUrl(origin, path, mediaOptions) {
+  return absoluteUrl(origin, resolvePublicMediaUrl(path, mediaOptions));
+}
+
 function catalogItems(catalog, origin) {
   return catalog.flatMap((shader) => {
     const variants = shader.variants?.length ? shader.variants : [undefined];
@@ -63,9 +68,17 @@ function faqPage(faqs, name, url) {
   };
 }
 
-export function buildRouteSeo(route, origin, catalog = []) {
-  const defaultImage = absoluteUrl(origin, "/thumbnails/threeui-intro.jpg");
-  const indexable = route.page !== "not-found" && route.page !== "capture" && route.page !== "oauth-consent";
+export function buildRouteSeo(route, origin, catalog = [], mediaOptions) {
+  const defaultImage = absoluteMediaUrl(origin, "/thumbnails/threeui-intro.jpg", mediaOptions);
+  const nonIndexableBrowseTag = route.page === "browse"
+    && Boolean(route.browseTag)
+    && !isIndexableBrowseTag(route.browseTag);
+  const indexable = route.page !== "not-found"
+    && route.page !== "capture"
+    && route.page !== "designcode-claim"
+    && route.page !== "oauth-consent"
+    && route.page !== "purchaseSuccess"
+    && !nonIndexableBrowseTag;
   let title = brandedTitle(SITE_TITLE);
   let description = SITE_DESCRIPTION;
   let canonicalPath = route.canonicalPath ?? STATIC_ROUTE_PATHS.browse;
@@ -101,6 +114,22 @@ export function buildRouteSeo(route, origin, catalog = []) {
       "@context": "https://schema.org",
       "@type": "WebPage",
       name: "ThreeUI Pro Pricing",
+      description,
+      url: absoluteUrl(origin, canonicalPath),
+    };
+  } else if (route.page === "purchaseSuccess") {
+    title = brandedTitle("ThreeUI purchase status");
+    description = "Verify a recent ThreeUI Pro purchase and activate access for the signed-in account.";
+  } else if (route.page === "designcode-claim") {
+    title = brandedTitle("Activate DesignCode Product Pass");
+    description = "Activate a verified complimentary year of ThreeUI Pro from DesignCode Product Pass.";
+  } else if (route.page === "sponsorship") {
+    title = brandedTitle("Sponsor ThreeUI Community");
+    description = "Support open-source ThreeUI with a linked GitHub README banner, website documentation placement, or a scoped integration partnership.";
+    structuredData = {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: "Sponsor ThreeUI Community",
       description,
       url: absoluteUrl(origin, canonicalPath),
     };
@@ -151,7 +180,7 @@ export function buildRouteSeo(route, origin, catalog = []) {
     title = brandedTitle(primary);
     description = compactText(variant?.description ?? shader.description, 160);
     canonicalPath = shaderRoutePath(shader, variant?.id);
-    image = absoluteUrl(origin, variant?.thumbnail ?? shader.thumbnail);
+    image = absoluteMediaUrl(origin, variant?.thumbnail ?? shader.thumbnail, mediaOptions);
     structuredData = route.page === "capture" ? undefined : {
       "@context": "https://schema.org",
       "@type": "SoftwareSourceCode",
@@ -194,6 +223,7 @@ export function buildRouteSeo(route, origin, catalog = []) {
         { "@type": "TechArticle", name: "Installation", url: absoluteUrl(origin, STATIC_ROUTE_PATHS.installation) },
         { "@type": "TechArticle", name: "MCP", url: absoluteUrl(origin, STATIC_ROUTE_PATHS.mcp) },
         { "@type": "WebPage", name: "Pricing", url: absoluteUrl(origin, STATIC_ROUTE_PATHS.pricing) },
+        { "@type": "WebPage", name: "Sponsorship", url: absoluteUrl(origin, STATIC_ROUTE_PATHS.sponsorship) },
         ...(browseFaqs.length > 0
           ? [faqPage(browseFaqs, `Frequently asked questions about ${browseContent.heading}`, browseUrl)]
           : []),
@@ -211,7 +241,11 @@ export function buildRouteSeo(route, origin, catalog = []) {
     description,
     canonical: absoluteUrl(origin, canonicalPath),
     image,
-    robots: indexable ? "index, follow, max-image-preview:large" : "noindex, nofollow",
+    robots: indexable
+      ? "index, follow, max-image-preview:large"
+      : nonIndexableBrowseTag
+        ? "noindex, follow"
+        : "noindex, nofollow",
     structuredData,
   };
 }

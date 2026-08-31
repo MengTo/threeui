@@ -546,3 +546,726 @@
     transform: none !important;
   }
 }
+
+/* ── Top dock variants ────────────────────────────────────────────────────
+   Every dimension below is a container query unit with a clamp, because these
+   bars are shown at anything from a 600 px card to a 1920 px capture frame: a
+   fixed 56 px bar that reads correctly in the catalogue frame becomes a thin
+   strip of small type at full width. One scale block feeds all three. */
+
+.animated-top-dock-component.atd-modern,
+.animated-top-dock-component.atd-retro,
+.animated-top-dock-component.atd-glass {
+  --atd-top: clamp(16px, 2.6cqw, 46px);
+  --atd-bar-width: min(1460px, calc(100% - clamp(24px, 4.2cqw, 96px)));
+  --atd-bar-height: clamp(48px, 3.4cqw, 68px);
+  --atd-bar-pad: clamp(5px, 0.42cqw, 9px);
+  --atd-bar-lead: clamp(14px, 1.15cqw, 25px);
+  --atd-item-height: clamp(30px, 2.2cqw, 44px);
+  --atd-item-pad: clamp(10px, 0.86cqw, 18px);
+  --atd-label: clamp(12px, 0.78cqw, 17px);
+  --atd-icon: clamp(13px, 0.92cqw, 19px);
+  --atd-gap: clamp(5px, 0.44cqw, 9px);
+  --atd-brand: clamp(13px, 0.94cqw, 20px);
+  --atd-mark: clamp(22px, 1.55cqw, 33px);
+  --atd-action-height: clamp(34px, 2.5cqw, 50px);
+  display: block;
+  overflow: hidden;
+}
+
+.atd-modern__bar,
+.atd-retro__bar {
+  position: absolute;
+  top: var(--atd-top);
+  left: 50%;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: var(--atd-bar-width);
+  height: var(--atd-bar-height);
+  transform: translateX(-50%);
+}
+
+/* Command bar: the bar hugs its own content — brand, dock and actions sit in
+   one flow with a gap between them rather than being pushed to the far edges of
+   a full-bleed strip. That only holds because the dock's track is locked to its
+   rest width (lockTrack in the controller): the spring then grows its items
+   outside that track instead of widening the bar and shoving the brand and the
+   actions around on every pointer move. */
+.atd-modern__bar {
+  /* space-between is inherited rather than centred on purpose: at its natural
+     width the three groups already fill the box, and in a shell too narrow for
+     them the overflow then runs off the right instead of taking the brand off
+     the left as well */
+  width: max-content;
+  max-width: var(--atd-bar-width);
+  padding: var(--atd-bar-pad) var(--atd-bar-pad) var(--atd-bar-pad) var(--atd-bar-lead);
+}
+
+.atd-modern__dock {
+  display: flex;
+  flex: none;
+  gap: clamp(2px, 0.2cqw, 5px);
+  align-items: flex-start;
+  /* the track is one item tall and its rest width wide, and the row is centred
+     inside it, so a growing item overflows evenly on all four sides without
+     moving a single neighbour in the bar */
+  justify-content: center;
+  height: var(--atd-item-height);
+}
+
+.atd-modern__item,
+.atd-retro__item,
+.atd-glass__item {
+  display: inline-flex;
+  flex: none;
+  gap: var(--atd-gap);
+  align-items: center;
+  justify-content: center;
+  height: var(--atd-item-height);
+  padding: 0 var(--atd-item-pad);
+  outline: none;
+  white-space: nowrap;
+  transform-origin: 50% 0;
+  will-change: width, height, transform;
+  cursor: pointer;
+}
+
+.atd-modern__brand,
+.atd-glass__brand,
+.atd-retro__brand {
+  display: inline-flex;
+  flex: none;
+  gap: clamp(7px, 0.6cqw, 13px);
+  align-items: center;
+  text-decoration: none;
+}
+
+.atd-modern__mark,
+.atd-glass__mark {
+  display: block;
+  width: var(--atd-mark);
+  height: var(--atd-mark);
+  overflow: hidden;
+}
+
+.atd-modern__mark svg,
+.atd-glass__mark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.atd-modern__word,
+.atd-glass__word {
+  font-size: var(--atd-brand);
+  font-weight: 600;
+  letter-spacing: -0.018em;
+}
+
+.atd-modern__actions {
+  display: inline-flex;
+  flex: none;
+  gap: clamp(4px, 0.34cqw, 8px);
+  align-items: center;
+}
+
+.atd-modern__ghost {
+  height: var(--atd-action-height);
+  padding: 0 clamp(12px, 0.95cqw, 20px);
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font: 500 var(--atd-label) / 1 inherit;
+  transition: color 0.16s, background 0.16s;
+  cursor: pointer;
+}
+
+.atd-modern__cta,
+.atd-glass__cta {
+  height: var(--atd-action-height);
+  border-radius: 999px;
+  font: 600 var(--atd-label) / 1 inherit;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s;
+  cursor: pointer;
+}
+
+/* ── Modern command bar ─────────────────────────────────────────────────── */
+
+.animated-top-dock-component.atd-modern {
+  /* a ceiling rather than a width: the command bar sizes itself to its own
+     cluster, and only falls back to an inset strip in a shell too narrow to
+     hold it */
+  --atd-bar-width: min(1240px, calc(100% - clamp(24px, 5cqw, 120px)));
+  background: #07080c;
+}
+
+.atd-modern__aurora {
+  position: absolute;
+  inset: -24% -12% auto -12%;
+  z-index: 1;
+  height: 82%;
+  pointer-events: none;
+  background:
+    radial-gradient(58% 62% at 22% 36%, rgba(78, 116, 255, 0.4), transparent 68%),
+    radial-gradient(46% 56% at 78% 20%, rgba(186, 96, 255, 0.3), transparent 70%),
+    radial-gradient(40% 48% at 52% 6%, rgba(56, 220, 214, 0.2), transparent 72%),
+    radial-gradient(34% 40% at 50% 14%, rgba(255, 255, 255, 0.07), transparent 76%);
+  filter: blur(8px);
+}
+
+.atd-modern__bar {
+  gap: clamp(14px, 2.4cqw, 40px);
+  border: 1px solid rgba(255, 255, 255, 0.045);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(25, 27, 36, 0.86), rgba(12, 13, 18, 0.82));
+  box-shadow: 0 22px 52px -24px rgba(0, 0, 0, 0.92), inset 0 1px rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+}
+
+.atd-modern__brand {
+  color: #f2f3f7;
+}
+
+.atd-modern__mark {
+  /* a full circle: the shared brand mark is a rounded square, so the disc is cut
+     from it by the mark box's own clip rather than by a second svg */
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.42);
+}
+
+.atd-modern__item {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: #9b9fae;
+  background: transparent;
+  font: 500 var(--atd-label) / 1 inherit;
+  letter-spacing: -0.005em;
+  transition: color 0.16s, border-color 0.18s, background 0.18s, box-shadow 0.18s, backdrop-filter 0.18s;
+}
+
+/* :hover is carried alongside the proximity flag so the glass still lands when
+   the spring is off — reduced motion, a coarse pointer, a narrow viewport */
+.atd-modern__item[data-dock-near="true"],
+.atd-modern__item:hover,
+.atd-modern__item:focus-visible {
+  color: #f4f5f9;
+  border-color: rgba(255, 255, 255, 0.055);
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: 0 8px 20px -14px rgba(0, 0, 0, 0.9), inset 0 1px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(18px) saturate(170%);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+}
+
+.atd-modern__item[aria-pressed="true"] {
+  color: #0a0b10;
+  border-color: transparent;
+  background: linear-gradient(180deg, #ffffff, #dfe3ef);
+  box-shadow: 0 10px 24px -12px rgba(120, 150, 255, 0.75), inset 0 -1px rgba(0, 0, 0, 0.14);
+}
+
+.atd-modern__icon,
+.atd-glass__icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--atd-icon);
+  height: var(--atd-icon);
+  opacity: 0.72;
+  transition: opacity 0.16s;
+}
+
+.atd-modern__icon svg,
+.atd-glass__icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.atd-modern__item[data-dock-near="true"] .atd-modern__icon,
+.atd-modern__item[aria-pressed="true"] .atd-modern__icon,
+.atd-glass__item[data-dock-near="true"] .atd-glass__icon,
+.atd-glass__item[aria-pressed="true"] .atd-glass__icon {
+  opacity: 1;
+}
+
+.atd-modern__ghost {
+  color: #a7abba;
+}
+
+.atd-modern__ghost:hover {
+  color: #f0f1f6;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.atd-modern__cta {
+  display: inline-flex;
+  gap: var(--atd-gap);
+  align-items: center;
+  padding: 0 var(--atd-bar-pad) 0 clamp(14px, 1.1cqw, 24px);
+  border: 0;
+  color: #0a0b10;
+  background: linear-gradient(180deg, #ffffff, #d8ddec);
+  box-shadow: 0 10px 26px -14px rgba(150, 175, 255, 0.95), inset 0 -1px rgba(0, 0, 0, 0.16);
+}
+
+.atd-modern__cta svg {
+  box-sizing: border-box;
+  width: calc(var(--atd-action-height) - clamp(12px, 0.9cqw, 20px));
+  height: calc(var(--atd-action-height) - clamp(12px, 0.9cqw, 20px));
+  padding: clamp(4px, 0.3cqw, 7px);
+  border-radius: 999px;
+  background: rgba(10, 11, 16, 0.1);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.atd-modern__cta:hover {
+  box-shadow: 0 16px 32px -14px rgba(150, 175, 255, 1), inset 0 -1px rgba(0, 0, 0, 0.16);
+  transform: translateY(-1px);
+}
+
+.atd-modern__stage {
+  position: absolute;
+  top: 58%;
+  left: 50%;
+  z-index: 4;
+  width: min(88cqw, 1120px);
+  text-align: center;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.atd-modern__eyebrow {
+  margin: 0 0 clamp(8px, 0.9cqw, 18px);
+  color: #7d84a0;
+  font: 400 clamp(8px, 0.62cqw, 13px) / 1 "ThreeUI Fragment Mono", ui-monospace, monospace;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.atd-modern__headline {
+  /* background-clip: text paints only inside the element box, so at this size a
+     1.0-ish line-height would cut the ascenders and descenders out of the fill.
+     The padding buys the ink its own room back. */
+  margin: 0;
+  padding: 0.08em 0 0.14em;
+  color: transparent;
+  background: linear-gradient(180deg, #ffffff 16%, rgba(255, 255, 255, 0.3));
+  background-clip: text;
+  -webkit-background-clip: text;
+  font-size: clamp(30px, 7.6cqw, 150px);
+  font-weight: 400;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+/* ── Retro pixel terminal ───────────────────────────────────────────────────
+   The field canvas is a small drawing buffer stretched by CSS with
+   nearest-neighbour sampling, so its dither pattern arrives as real square
+   pixels. Every chrome edge here is square to sit on that same grid. */
+
+.animated-top-dock-component.atd-retro {
+  --atd-label: clamp(9px, 0.68cqw, 15px);
+  --atd-icon: clamp(10px, 0.78cqw, 17px);
+  --atd-brand: clamp(11px, 0.8cqw, 18px);
+  background: #0b0819;
+}
+
+.atd-retro__field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.atd-retro__vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(124% 90% at 50% 34%, transparent 28%, rgba(6, 4, 16, 0.62) 100%),
+    linear-gradient(180deg, rgba(6, 4, 16, 0.6) 0%, transparent 24%, transparent 62%, rgba(6, 4, 16, 0.58) 100%);
+}
+
+/* the raster runs at screen resolution, not at the field's pixel scale, so the
+   line structure stays a raster instead of banding the chunky artwork */
+.atd-retro::before {
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+  pointer-events: none;
+  content: "";
+  opacity: calc(var(--atd-retro-scan, 0.32) * 1.5);
+  background: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.42) 0 1px, transparent 1px 3px);
+}
+
+/* Horizontal fit: the bar is one continuous strip and the menu cells own all of
+   it. There are no gaps and no rounded ends — every cell is separated by a rule
+   and runs the full height, and the controller renormalises the widths so
+   opening one cell takes its room from the neighbours. */
+.atd-retro__bar {
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid #f4e6c8;
+  background: #1a1030;
+  box-shadow: 6px 6px 0 rgba(6, 4, 16, 0.62);
+}
+
+.atd-retro__brand {
+  height: 100%;
+  padding: 0 clamp(12px, 1.1cqw, 26px);
+  border-right: 2px solid #4b2f7e;
+  color: #f9c74f;
+  background: #150c28;
+  font: 400 var(--atd-brand) / 1 "ThreeUI Fragment Mono", ui-monospace, monospace;
+  letter-spacing: 0.12em;
+}
+
+.atd-retro__dock {
+  display: flex;
+  flex: 1 1 0;
+  gap: 0;
+  align-items: stretch;
+  min-width: 0;
+  height: 100%;
+}
+
+.atd-retro__badge {
+  display: inline-flex;
+  width: var(--atd-icon);
+  height: var(--atd-icon);
+}
+
+.atd-retro__badge svg,
+.atd-retro__icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+  shape-rendering: crispEdges;
+}
+
+.atd-retro__item {
+  height: 100%;
+  min-width: 0;
+  padding: 0 clamp(6px, 0.5cqw, 12px);
+  overflow: hidden;
+  border: 0;
+  border-right: 2px solid #4b2f7e;
+  color: #b9a7e8;
+  background: #241548;
+  font: 400 var(--atd-label) / 1 "ThreeUI Fragment Mono", ui-monospace, monospace;
+  letter-spacing: 0.14em;
+  transition: color 0.1s steps(2), background 0.1s steps(2);
+}
+
+.atd-retro__item[data-dock-near="true"],
+.atd-retro__item:focus-visible {
+  color: #fff4d6;
+  background: #3a2170;
+}
+
+.atd-retro__item[aria-pressed="true"] {
+  color: #1a1030;
+  background: #f9c74f;
+}
+
+.atd-retro__icon {
+  display: inline-flex;
+  flex: none;
+  width: var(--atd-icon);
+  height: var(--atd-icon);
+}
+
+.atd-retro__cta {
+  display: inline-flex;
+  flex: none;
+  gap: var(--atd-gap);
+  align-items: center;
+  height: 100%;
+  padding: 0 clamp(14px, 1.2cqw, 28px);
+  border: 0;
+  border-left: 2px solid #f4e6c8;
+  color: #1a1030;
+  background: #f47b5c;
+  font: 400 var(--atd-label) / 1 "ThreeUI Fragment Mono", ui-monospace, monospace;
+  letter-spacing: 0.16em;
+  transition: background 0.1s steps(2), color 0.1s steps(2);
+  cursor: pointer;
+}
+
+.atd-retro__cta:hover {
+  color: #1a1030;
+  background: #f9c74f;
+}
+
+.atd-retro__readout {
+  position: absolute;
+  bottom: clamp(30px, 4.2cqw, 74px);
+  left: 50%;
+  z-index: 8;
+  display: flex;
+  gap: clamp(12px, 2.4cqw, 42px);
+  margin: 0;
+  color: #a08fd4;
+  font: 400 clamp(9px, 0.62cqw, 13px) / 1 "ThreeUI Fragment Mono", ui-monospace, monospace;
+  letter-spacing: 0.2em;
+  transform: translateX(-50%);
+}
+
+/* ── Liquid glass ───────────────────────────────────────────────────────────
+   Vertical fit: the dock leaves the top edge for a rail down the left side. The
+   proximity field runs on the y axis, so an item grows taller and leans out to
+   the right instead of widening and dropping. The rail is a real
+   backdrop-filter panel over the refracting Three.js bead field, so its blur
+   samples the same pixels the glass shader refracts. */
+
+.animated-top-dock-component.atd-glass {
+  --atd-rail-width: clamp(158px, 12.5cqw, 250px);
+  background: #08090d;
+}
+
+.atd-glass__field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* a scrim behind the rail: the bead field is bright enough in places to swallow
+   the wordmark, and the panel's own blur cannot darken what it samples */
+.atd-glass::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 5;
+  width: 42%;
+  pointer-events: none;
+  content: "";
+  background: linear-gradient(90deg, rgba(6, 7, 11, 0.66), rgba(6, 7, 11, 0));
+}
+
+.atd-glass__rail {
+  position: absolute;
+  top: 50%;
+  left: clamp(20px, 3.4cqw, 68px);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 0.5cqw, 11px);
+  align-items: stretch;
+  width: var(--atd-rail-width);
+  padding: var(--atd-bar-pad);
+  border-radius: clamp(20px, 1.7cqw, 34px);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+  box-shadow:
+    0 30px 64px -26px rgba(0, 0, 0, 0.92),
+    inset 0 1px 0 rgba(255, 255, 255, 0.44),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(26px) saturate(190%);
+  -webkit-backdrop-filter: blur(26px) saturate(190%);
+  transform: translateY(-50%);
+}
+
+.atd-glass__rail::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  border-radius: inherit;
+  background: linear-gradient(168deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0) 76%, rgba(255, 255, 255, 0.14) 100%);
+}
+
+.atd-glass__brand {
+  position: relative;
+  padding: clamp(6px, 0.5cqw, 12px) clamp(8px, 0.7cqw, 15px);
+  color: #fbfbfe;
+}
+
+.atd-glass__mark {
+  border-radius: clamp(7px, 0.5cqw, 11px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.42), inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+.atd-glass__hairline {
+  height: 1px;
+  margin: clamp(2px, 0.2cqw, 5px) clamp(6px, 0.5cqw, 12px);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.04));
+}
+
+.atd-glass__dock {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2px, 0.2cqw, 5px);
+  align-items: stretch;
+}
+
+.atd-glass__item {
+  justify-content: flex-start;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: clamp(12px, 1cqw, 22px);
+  color: rgba(255, 255, 255, 0.66);
+  background: transparent;
+  font: 500 var(--atd-label) / 1 inherit;
+  letter-spacing: -0.005em;
+  /* the rail grows downward from each item's own top edge */
+  transform-origin: 0 50%;
+  transition: color 0.18s, border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.atd-glass__item[data-dock-near="true"],
+.atd-glass__item:focus-visible {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.24);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.07));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.46), 0 8px 18px -10px rgba(0, 0, 0, 0.8);
+}
+
+.atd-glass__item[aria-pressed="true"] {
+  color: #0d0f16;
+  border-color: rgba(255, 255, 255, 0.6);
+  background: linear-gradient(180deg, #ffffff, #e6e9f4);
+  box-shadow: 0 10px 24px -12px rgba(255, 255, 255, 0.5), inset 0 -1px rgba(0, 0, 0, 0.14);
+}
+
+.atd-glass__cta {
+  display: inline-flex;
+  gap: var(--atd-gap);
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 clamp(12px, 1cqw, 22px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: #0d0f16;
+  background: linear-gradient(180deg, #ffffff, #dfe3f0);
+  box-shadow: 0 12px 30px -14px rgba(255, 255, 255, 0.6), inset 0 -1px rgba(0, 0, 0, 0.16);
+}
+
+.atd-glass__cta svg {
+  width: var(--atd-icon);
+  height: var(--atd-icon);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.atd-glass__cta:hover {
+  box-shadow: 0 16px 34px -14px rgba(255, 255, 255, 0.75), inset 0 -1px rgba(0, 0, 0, 0.16);
+  transform: translateY(-1px);
+}
+
+.atd-modern .animated-top-dock-component__caption,
+.atd-glass .animated-top-dock-component__caption {
+  color: rgba(255, 255, 255, 0.34);
+}
+
+.atd-retro .animated-top-dock-component__caption {
+  z-index: 12;
+  color: #7b6ab0;
+}
+
+@container (max-width: 900px) {
+  .atd-modern__ghost {
+    display: none;
+  }
+
+  .atd-modern__item span:last-child,
+  .atd-retro__item span:last-child {
+    display: none;
+  }
+
+  /* the bar is sized by its content now, so a shell this narrow has to give the
+     content back: the call to action drops to its glyph rather than pushing the
+     cluster past the bar's own max width */
+  .atd-modern__cta span {
+    display: none;
+  }
+
+  .atd-modern__cta {
+    padding: 0 var(--atd-bar-pad);
+  }
+
+  /* the rail collapses to its icons rather than keeping a 158 px column in a
+     card that is only a few hundred pixels wide */
+  .animated-top-dock-component.atd-glass {
+    --atd-rail-width: auto;
+  }
+
+  .atd-glass__item {
+    justify-content: center;
+  }
+
+  .atd-glass__item span:last-child,
+  .atd-glass__word,
+  .atd-glass__cta span {
+    display: none;
+  }
+
+  .atd-glass__cta {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .atd-modern__word {
+    display: none;
+  }
+
+  .atd-modern__item {
+    height: 28px !important;
+    transform: none !important;
+  }
+
+  .atd-glass__item {
+    height: auto !important;
+    transform: none !important;
+  }
+
+  /* the strip keeps its full-height cells on a phone; only the spring stops */
+  .atd-retro__item {
+    height: 100% !important;
+    transform: none !important;
+  }
+
+  .atd-modern__stage {
+    top: 62%;
+  }
+
+  .atd-retro__readout {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atd-modern__item,
+  .atd-retro__item,
+  .atd-glass__item {
+    transform: none !important;
+  }
+}

@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Woven Cloth · Washi Noren</title>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<style>
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #0d0a07; }
+  #cloth { display: block; width: 100%; height: 100%; }
+  #vignette {
+    position: fixed; inset: 0; pointer-events: none;
+    background: radial-gradient(80% 74% at 50% 44%, transparent 46%, rgba(10,7,5,.80) 100%);
+  }
+</style>
+</head>
+<body>
+<canvas id="cloth"></canvas>
+<div id="vignette"></div>
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const canvas = document.getElementById('cloth');
+  if (!window.THREE) return;
+
+  const TW = 1500, TH = 980;
+  const PANELS = 3;
+  const BAND = 0.15;            // the uncut sleeve the rod runs through
+  const SLIT_U = [1 / 3, 2 / 3];
+
+  // A small deterministic generator, so the paper's fibres and torn edge are
+  // the same every load — the deckle has to match the alpha mask exactly.
+  function rng(seed) {
+    let s = seed >>> 0;
+    return () => {
+      s ^= s << 13; s >>>= 0;
+      s ^= s >> 17;
+      s ^= s << 5; s >>>= 0;
+      return s / 4294967296;
+    };
+  }
+
+  function surface(w, h) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    return { canvas: c, ctx: c.getContext('2d', { willReadFrequently: true }) };
+  }
+
+  /* ------------------------------------------------------------- deckle --
+     One torn profile, sampled by both the alpha mask and the shading, so the
+     edge reads as a genuine hand-made sheet rather than a cropped rectangle. */
+  const deckleRand = rng(20260826);
+  const deckleLow = new Float32Array(TW);
+  {
+    const control = [];
+    for (let i = 0; i <= 24; i++) control.push(deckleRand());
+    for (let x = 0; x < TW; x++) {
+      const f = (x / TW) * 24;
+      const i = Math.floor(f), t = f - i;
+      const smooth = t * t * (3 - 2 * t);
+      const a = control[i], b = control[Math.min(24, i + 1)];
+      const base = a + (b - a) * smooth;
+      const fine = Math.sin(x * 0.19) * 0.16 + Math.sin(x * 0.061 + 1.7) * 0.24;
+      deckleLow[x] = TH - 14 - (base * 26 + fine * 12);
+    }
+  }
+
+  function makeAlphaMask() {
+    const s = surface(TW, TH), x = s.ctx;
+    x.fillStyle = '#fff'; x.fillRect(0, 0, TW, TH);
+    x.fillStyle = '#000';
+
+    // Slits between the panels, stopping short of the sleeve.
+    const slitW = 22, bandPx = TH * BAND;
+    SLIT_U.forEach((u) => x.fillRect(u * TW - slitW / 2, bandPx, slitW, TH - bandPx));
+
+    // Torn lower edge.
+    x.beginPath();
+    x.moveTo(0, TH);
+    for (let px = 0; px < TW; px++) x.lineTo(px, deckleLow[px]);
+    x.lineTo(TW, TH);
+    x.closePath();
+    x.fill();
+
+    // Softly feathered outer edges, as a couched sheet dries.
+    const side = rng(771);
+    for (let e = 0; e < 2; e++) {
+      x.beginPath();
+      x.moveTo(e ? TW : 0, 0);
+      for (let py = 0; py <= TH; py += 6) {
+        const w = 6 + side() * 9;
+        x.lineTo(e ? TW - w : w, py);
+      }
+      x.lineTo(e ? TW : 0, TH);
+      x.closePath();
+      x.fill();
+    }
+    return s;
+  }
+
+  /* ---------------------------------------------------------- the cloth --
+     Indigo-dyed kozo: vat unevenness, long fibres, the laid and chain lines
+     the papermaking screen leaves, and a resist-dyed crest and lettering. */
+  function drawWeaveCrest(x, cx, cy, R) {
+    const cells = 6, step = (R * 1.86) / cells, origin = -R * 0.93;
+    x.save();
+    x.beginPath(); x.arc(cx, cy, R * 0.86, 0, Math.PI * 2); x.clip();
+    x.fillStyle = '#f3ece0';
+    for (let a = 0; a < cells; a++) {
+      for (let b = 0; b < cells; b++) {
+        if ((a + b) % 2) continue;
+        x.fillRect(cx + origin + a * step, cy + origin + b * step, step + 0.5, step + 0.5);
+      }
+    }
+    x.restore();
+    x.strokeStyle = '#f3ece0';
+    x.lineWidth = R * 0.10;
+    x.beginPath(); x.arc(cx, cy, R * 0.96, 0, Math.PI * 2); x.stroke();
+  }
+
+  function verticalWord(x, word, cx, top, size, step) {
+    x.font = 'bold ' + size + 'px Georgia, "Times New Roman", serif';
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    for (let i = 0; i < word.length; i++) x.fillText(word[i], cx, top + i * step);
+  }
+
+  function makeClothCanvas() {
+    const s = surface(TW, TH), x = s.ctx;
+
+    // Indigo vat: deeper where the cloth was dipped longest.
+    const g = x.createLinearGradient(0, 0, 0, TH);
+    g.addColorStop(0, '#284a6c');
+    g.addColorStop(0.42, '#203d5e');
+    g.addColorStop(1, '#17304e');
+    x.fillStyle = g; x.fillRect(0, 0, TW, TH);
+
+    const cloud = rng(4471);
+    for (let i = 0; i < 26; i++) {
+      const cx = cloud() * TW, cy = cloud() * TH, r = 120 + cloud() * 320;
+      const light = cloud() > 0.5;
+      const rg = x.createRadialGradient(cx, cy, 0, cx, cy, r);
+      rg.addColorStop(0, light ? 'rgba(96,132,168,0.13)' : 'rgba(9,22,40,0.16)');
+      rg.addColorStop(1, 'rgba(0,0,0,0)');
+      x.fillStyle = rg; x.fillRect(cx - r, cy - r, r * 2, r * 2);
+    }
+
+    // Laid lines from the bamboo screen, then the heavier chain lines.
+    x.strokeStyle = 'rgba(180,205,228,0.045)';
+    x.lineWidth = 1;
+    for (let px = 0; px < TW; px += 4) { x.beginPath(); x.moveTo(px + 0.5, 0); x.lineTo(px + 0.5, TH); x.stroke(); }
+    x.strokeStyle = 'rgba(196,218,238,0.10)';
+    x.lineWidth = 2;
+    for (let py = 26; py < TH; py += 38) { x.beginPath(); x.moveTo(0, py + 0.5); x.lineTo(TW, py + 0.5); x.stroke(); }
+
+    // Kozo fibres: long, mostly aligned, a few standing proud of the sheet.
+    const fib = rng(90210);
+    for (let i = 0; i < 2200; i++) {
+      const fx = fib() * TW, fy = fib() * TH;
+      const len = 30 + fib() * 150;
+      const ang = (fib() - 0.5) * 0.9 + (fib() > 0.82 ? Math.PI / 2 : 0);
+      const bow = (fib() - 0.5) * 26;
+      const pale = fib();
+      x.strokeStyle = pale > 0.3
+        ? 'rgba(214,232,247,' + (0.022 + fib() * 0.048) + ')'
+        : 'rgba(10,20,36,' + (0.04 + fib() * 0.07) + ')';
+      x.lineWidth = 0.7 + fib() * 1.9;
+      x.beginPath();
+      x.moveTo(fx, fy);
+      x.quadraticCurveTo(
+        fx + Math.cos(ang) * len * 0.5 + bow, fy + Math.sin(ang) * len * 0.5 - bow,
+        fx + Math.cos(ang) * len, fy + Math.sin(ang) * len,
+      );
+      x.stroke();
+    }
+
+    // Katazome: a resist-dyed frame inside each panel.
+    const panelW = TW / PANELS;
+    x.strokeStyle = 'rgba(243,236,224,0.72)';
+    for (let k = 0; k < PANELS; k++) {
+      const x0 = k * panelW + 34, w = panelW - 68;
+      x.lineWidth = 5;
+      x.strokeRect(x0, TH * BAND + 34, w, TH - TH * BAND - 118);
+      x.lineWidth = 2;
+      x.strokeRect(x0 + 13, TH * BAND + 47, w - 26, TH - TH * BAND - 144);
+    }
+
+    // The sleeve the rod runs through, and its shadow on the cloth below.
+    x.fillStyle = 'rgba(8,18,34,0.30)';
+    x.fillRect(0, 0, TW, TH * BAND);
+    const sh = x.createLinearGradient(0, TH * BAND, 0, TH * BAND + 54);
+    sh.addColorStop(0, 'rgba(6,14,28,0.42)');
+    sh.addColorStop(1, 'rgba(6,14,28,0)');
+    x.fillStyle = sh; x.fillRect(0, TH * BAND, TW, 54);
+    x.strokeStyle = 'rgba(243,236,224,0.5)';
+    x.lineWidth = 2.5;
+    x.beginPath(); x.moveTo(0, TH * BAND); x.lineTo(TW, TH * BAND); x.stroke();
+
+    x.fillStyle = '#f3ece0';
+    verticalWord(x, 'WOVEN', panelW * 0.5, TH * 0.34, 96, 116);
+    drawWeaveCrest(x, panelW * 1.5, TH * 0.53, 158);
+    verticalWord(x, 'CLOTH', panelW * 2.5, TH * 0.34, 96, 116);
+
+    // Vermilion seal, stamped at the foot of the centre panel.
+    const S = 96, sx = panelW * 1.5 - S / 2, sy = TH * 0.828;
+    x.fillStyle = '#a8342a';
+    x.fillRect(sx, sy, S, S);
+    x.strokeStyle = '#f3ece0';
+    x.lineWidth = 4;
+    x.strokeRect(sx + 11, sy + 11, S - 22, S - 22);
+    x.fillStyle = '#f3ece0';
+    for (let k = 0; k < 3; k++) x.fillRect(sx + 23 + k * 18, sy + 23, 8, S - 46);
+    x.fillRect(sx + 23, sy + 38, S - 46, 8);
+    x.fillRect(sx + 23, sy + 60, S - 46, 8);
+
+    return s;
+  }
+
+  function makeWoodTexture() {
+    const W = 512, H = 96, s = surface(W, H), x = s.ctx;
+    const g = x.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#a1764a');
+    g.addColorStop(0.45, '#7d5533');
+    g.addColorStop(1, '#563820');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    const grain = rng(3312);
+    for (let i = 0; i < 160; i++) {
+      const y = grain() * H;
+      x.strokeStyle = 'rgba(28,17,8,' + (0.05 + grain() * 0.16) + ')';
+      x.lineWidth = 0.6 + grain() * 1.8;
+      x.beginPath();
+      x.moveTo(0, y);
+      for (let px = 0; px <= W; px += 32) x.lineTo(px, y + Math.sin(px * 0.02 + i) * 2.4);
+      x.stroke();
+    }
+    const tex = new THREE.CanvasTexture(s.canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.repeat.set(3, 1);
+    return tex;
+  }
+
+  // A shoji screen behind the noren gives the paper something to glow with.
+  function makeShojiTexture() {
+    const W = 768, H = 512, s = surface(W, H), x = s.ctx;
+    x.fillStyle = '#1a1109'; x.fillRect(0, 0, W, H);
+    const glow = x.createRadialGradient(W * 0.5, H * 0.44, 0, W * 0.5, H * 0.44, W * 0.52);
+    glow.addColorStop(0, '#ffdda4');
+    glow.addColorStop(0.40, '#a97c42');
+    glow.addColorStop(0.76, '#341d0c');
+    glow.addColorStop(1, '#150d06');
+    x.fillStyle = glow; x.fillRect(0, 0, W, H);
+    // Kumiko lattice, softened so it stays a suggestion behind the cloth.
+    if ('filter' in x) x.filter = 'blur(7px)';
+    x.strokeStyle = 'rgba(46,28,13,0.20)';
+    x.lineWidth = 3;
+    for (let px = 54; px < W; px += 128) { x.beginPath(); x.moveTo(px, 0); x.lineTo(px, H); x.stroke(); }
+    for (let py = 46; py < H; py += 118) { x.beginPath(); x.moveTo(0, py); x.lineTo(W, py); x.stroke(); }
+    if ('filter' in x) x.filter = 'none';
+    const tex = new THREE.CanvasTexture(s.canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
+  /* ------------------------------------------------------------- scene -- */
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.22;
+
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0c0906);
+
+  const shoji = new THREE.Mesh(
+    new THREE.PlaneGeometry(13, 8.4),
+    new THREE.MeshBasicMaterial({ map: makeShojiTexture() }),
+  );
+  shoji.position.set(0, 0, -2.4);
+  scene.add(shoji);
+
+  const BW = 4.4, BH = 2.9;
+  const GX = 60, GY = 40;
+  const geo = new THREE.PlaneGeometry(BW, BH, GX, GY);
+
+  const clothCanvas = makeClothCanvas();
+  const albedo = new THREE.CanvasTexture(clothCanvas.canvas);
+  albedo.colorSpace = THREE.SRGBColorSpace;
+  const alphaMap = new THREE.CanvasTexture(makeAlphaMask().canvas);
+  [albedo, alphaMap].forEach((t) => { t.anisotropy = maxAniso; });
+
+  const mat = new THREE.MeshPhysicalMaterial({
+    map: albedo,
+    alphaMap,
+    alphaTest: 0.5,
+    transparent: false,
+    side: THREE.DoubleSide,
+    roughness: 0.92,
+    metalness: 0.0,
+    transmission: 0.82,
+    thickness: 0.10,
+    ior: 1.36,
+    attenuationColor: new THREE.Color('#9dc0dd'),
+    attenuationDistance: 3.0,
+    sheen: 0.9,
+    sheenColor: new THREE.Color('#d8e6f2'),
+    sheenRoughness: 0.85,
+  });
+
+  const noren = new THREE.Mesh(geo, mat);
+  scene.add(noren);
+
+  /* ------------------------------------------------------------ fittings */
+  const wood = new THREE.MeshStandardMaterial({ map: makeWoodTexture(), roughness: 0.66, metalness: 0.0 });
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.062, BW + 0.9, 20), wood);
+  rod.rotation.z = Math.PI / 2;
+  rod.position.set(0, BH / 2 + 0.045, 0.02);
+  scene.add(rod);
+  [-1, 1].forEach((side) => {
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.082, 18, 12), wood);
+    cap.position.set(side * (BW + 0.9) / 2, BH / 2 + 0.045, 0.02);
+    scene.add(cap);
+    const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 3.4, 8),
+      new THREE.MeshStandardMaterial({ color: 0x2a2018, roughness: 0.9 }));
+    cord.position.set(side * (BW + 0.72) / 2, BH / 2 + 1.75, 0.02);
+    scene.add(cord);
+  });
+
+  /* ------------------------------------------------------------ lights -- */
+  scene.add(new THREE.AmbientLight(0x4a3a28, 0.8));
+  const lantern = new THREE.DirectionalLight(0xffd9a0, 3.6);   // through the shoji
+  lantern.position.set(-0.4, 0.9, -3.2); scene.add(lantern);
+  const key = new THREE.DirectionalLight(0xffe9cc, 2.1);
+  key.position.set(-2.6, 2.4, 2.6); scene.add(key);
+  const fill = new THREE.DirectionalLight(0x94b6d8, 0.5);
+  fill.position.set(3.0, -1.0, 2.0); scene.add(fill);
+
+  /* ----------------------------------------------------------- physics --
+     One sheet, but the horizontal links are cut below the sleeve at each
+     slit, so the three panels hang and sway as their own pieces of cloth. */
+  const pos = geo.attributes.position;
+  const N = (GX + 1) * (GY + 1);
+  const cur = new Float32Array(N * 3), prev = new Float32Array(N * 3), rest = new Float32Array(N * 3);
+  const pinned = new Uint8Array(N);
+  const idx = (ix, iy) => ix + iy * (GX + 1);
+
+  for (let i = 0; i < N; i++) {
+    const ax = pos.getX(i), ay = pos.getY(i);
+    cur[i * 3] = prev[i * 3] = rest[i * 3] = ax;
+    cur[i * 3 + 1] = prev[i * 3 + 1] = rest[i * 3 + 1] = ay;
+    cur[i * 3 + 2] = prev[i * 3 + 2] = rest[i * 3 + 2] = 0;
+  }
+  for (let ix = 0; ix <= GX; ix++) pinned[ix] = 1;
+
+  const BAND_ROWS = Math.round(GY * BAND);
+  const SLIT_IX = SLIT_U.map((u) => Math.round(u * GX));
+  const panelOf = (ix) => (ix < SLIT_IX[0] ? 0 : ix < SLIT_IX[1] ? 1 : 2);
+  const linked = (ix, iy) => !(iy > BAND_ROWS && SLIT_IX.indexOf(ix + 1) !== -1);
+
+  const restH = BW / GX, restV = BH / GY;
+  const restD = Math.sqrt(restH * restH + restV * restV);
+  const GRAV = -1.65, DAMP = 0.986, DT = 0.016;
+
+  function wind(ix, iy, t) {
+    const cx = ix / GX, cy = iy / GY;
+    // An indoor draft: each panel catches it on its own beat.
+    const ph = panelOf(ix) * 2.1;
+    const gust = 0.40 + 0.28 * Math.sin(t * 0.37 + ph * 0.6) + 0.15 * Math.sin(t * 0.93 + ph);
+    const travel = t * 1.2 - cy * 2.2 + ph;
+    const amp = 1.5 * cy;
+    const fz = (Math.sin(travel) + 0.35 * Math.sin(travel * 1.8 + cx * 3.4)) * amp * gust;
+    const fx = Math.sin(t * 0.44 + ph) * 0.20 * cy;
+    return [fx, -0.18 * cy, fz];
+  }
+
+  function solve(a, b, rl) {
+    const ax = cur[a * 3], ay = cur[a * 3 + 1], az = cur[a * 3 + 2];
+    let dx = cur[b * 3] - ax, dy = cur[b * 3 + 1] - ay, dz = cur[b * 3 + 2] - az;
+    const d = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-6;
+    const diff = (d - rl) / d * 0.5;
+    dx *= diff; dy *= diff; dz *= diff;
+    const pa = pinned[a], pb = pinned[b];
+    if (!pa && !pb) {
+      cur[a * 3] += dx; cur[a * 3 + 1] += dy; cur[a * 3 + 2] += dz;
+      cur[b * 3] -= dx; cur[b * 3 + 1] -= dy; cur[b * 3 + 2] -= dz;
+    } else if (pa && !pb) { cur[b * 3] -= dx * 2; cur[b * 3 + 1] -= dy * 2; cur[b * 3 + 2] -= dz * 2; }
+    else if (!pa && pb) { cur[a * 3] += dx * 2; cur[a * 3 + 1] += dy * 2; cur[a * 3 + 2] += dz * 2; }
+  }
+
+  function step(t) {
+    for (let iy = 0; iy <= GY; iy++) {
+      for (let ix = 0; ix <= GX; ix++) {
+        const i = idx(ix, iy);
+        if (pinned[i]) continue;
+        const f = wind(ix, iy, t);
+        for (let k = 0; k < 3; k++) {
+          const j = i * 3 + k;
+          const a = k === 0 ? f[0] : k === 1 ? f[1] + GRAV : f[2];
+          const v = (cur[j] - prev[j]) * DAMP;
+          prev[j] = cur[j];
+          cur[j] = cur[j] + v + a * DT * DT;
+        }
+      }
+    }
+    for (let it = 0; it < 3; it++) {
+      for (let iy = 0; iy <= GY; iy++) {
+        for (let ix = 0; ix < GX; ix++) if (linked(ix, iy)) solve(idx(ix, iy), idx(ix + 1, iy), restH);
+      }
+      for (let iy = 0; iy < GY; iy++) {
+        for (let ix = 0; ix <= GX; ix++) solve(idx(ix, iy), idx(ix, iy + 1), restV);
+      }
+      for (let iy = 0; iy < GY; iy++) {
+        for (let ix = 0; ix < GX; ix++) {
+          if (!linked(ix, iy) || !linked(ix, iy + 1)) continue;
+          solve(idx(ix, iy), idx(ix + 1, iy + 1), restD);
+          solve(idx(ix + 1, iy), idx(ix, iy + 1), restD);
+        }
+      }
+    }
+    for (let ix = 0; ix <= GX; ix++) {
+      const i = ix;
+      for (let k = 0; k < 3; k++) { cur[i * 3 + k] = rest[i * 3 + k]; prev[i * 3 + k] = rest[i * 3 + k]; }
+    }
+  }
+
+  function commit() {
+    for (let i = 0; i < N; i++) pos.setXYZ(i, cur[i * 3], cur[i * 3 + 1], cur[i * 3 + 2]);
+    pos.needsUpdate = true;
+    geo.computeVertexNormals();
+  }
+
+  /* --------------------------------------------------------------- fit -- */
+  let camera;
+  function fit() {
+    const w = window.innerWidth, h = window.innerHeight;
+    renderer.setSize(w, h, false);
+    const aspect = w / h;
+    camera = new THREE.PerspectiveCamera(38, aspect, 0.1, 100);
+    const vFit = (BH * 1.12 / 2) / Math.tan(38 * Math.PI / 360);
+    const hFit = ((BW + 1.2) / 2) / Math.tan(38 * Math.PI / 360) / aspect;
+    camera.position.set(0, 0.06, Math.max(vFit, hFit) * 1.02 + 0.3);
+    camera.lookAt(0, -0.02, 0);
+  }
+  window.addEventListener('resize', fit);
+  fit();
+
+  function draw(t) {
+    camera.position.x = Math.sin(t * 0.1) * 0.20;
+    camera.position.y = 0.06 + Math.sin(t * 0.14 + 1.1) * 0.07;
+    camera.lookAt(0, -0.02, 0);
+    renderer.render(scene, camera);
+  }
+
+  let running = false, raf = 0, t = 0;
+  function loop() {
+    if (!running) return;
+    t += DT;
+    step(t); commit(); draw(t);
+    raf = requestAnimationFrame(loop);
+  }
+  function start() { if (running) return; running = true; raf = requestAnimationFrame(loop); }
+  function stop() { running = false; cancelAnimationFrame(raf); }
+
+  window.__seek = (time) => {
+    const target = Math.max(0, time);
+    if (target < t) { t = 0; for (let i = 0; i < N * 3; i++) { cur[i] = rest[i]; prev[i] = rest[i]; } }
+    while (t < target - DT * 0.5) { t += DT; step(t); }
+    commit(); draw(t);
+  };
+
+  for (let s = 0; s < 180; s++) step(s * DT);
+  t = 180 * DT;
+  if (reduce) {
+    commit(); draw(t);
+  } else {
+    start();
+    document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+  }
+})();
+</script>
+</body>
+</html>

@@ -50,11 +50,6 @@ const CATEGORY_CONTENT = Object.freeze({
     heading: "Web motion design components",
     description: "Browse motion design components for interactive websites, including cinematic transitions, responsive animation, and production-ready source.",
   }),
-  Sections: Object.freeze({
-    title: "Interactive Website Sections",
-    heading: "Interactive website sections",
-    description: "Browse reusable website sections with interactive layouts, polished motion, responsive behavior, and copy-ready implementation source.",
-  }),
 });
 
 const CATEGORY_FAQS = Object.freeze({
@@ -150,6 +145,42 @@ const CATEGORY_FAQS = Object.freeze({
   ]),
 });
 
+// Keep tag URLs useful as browse filters without automatically asking search
+// engines to index every internal catalog descriptor. This list is deliberately
+// limited to distinct technologies and visual techniques with substantive
+// collections; category synonyms belong to their dedicated category routes.
+export const INDEXABLE_BROWSE_TAGS = Object.freeze([
+  "3d",
+  "canvas",
+  "canvas2d",
+  "crt",
+  "flow field",
+  "fluid",
+  "glsl",
+  "gsap",
+  "halftone",
+  "hover",
+  "isometric",
+  "noise",
+  "parallax",
+  "particles",
+  "physics",
+  "point cloud",
+  "postprocessing",
+  "procedural",
+  "refraction",
+  "scroll",
+  "scrolltrigger",
+  "shader",
+  "shadermaterial",
+  "tailwind",
+  "typography",
+  "webgl",
+  "webgl2",
+]);
+
+const INDEXABLE_BROWSE_TAG_SET = new Set(INDEXABLE_BROWSE_TAGS);
+
 const TOKEN_LABELS = Object.freeze({
   "2d": "2D",
   "3d": "3D",
@@ -191,6 +222,10 @@ export function browseTagLabel(tag) {
     .split(/\s+/)
     .map((token) => TOKEN_LABELS[token.toLowerCase()] ?? `${token.charAt(0).toUpperCase()}${token.slice(1)}`)
     .join(" ");
+}
+
+export function isIndexableBrowseTag(tag) {
+  return typeof tag === "string" && INDEXABLE_BROWSE_TAG_SET.has(tag.trim().toLowerCase());
 }
 
 export function browseTagContent(tag, resultCount = 0) {

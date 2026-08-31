@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Woven Cloth · Atelier Flag</title>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<style>
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #12100d; }
+  #cloth { display: block; width: 100%; height: 100%; }
+  #vignette {
+    position: fixed; inset: 0; pointer-events: none;
+    background: radial-gradient(84% 76% at 46% 42%, transparent 50%, rgba(14,12,10,.72) 100%);
+  }
+</style>
+</head>
+<body>
+<canvas id="cloth"></canvas>
+<div id="vignette"></div>
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const canvas = document.getElementById('cloth');
+  if (!window.THREE) return;
+
+  const TW = 1600, TH = 1030;
+
+  // Cut-and-sew geometry, in texture pixels. Everything the flag is made of
+  // — hoist band, panel seams, hems, topstitching — is laid out from here.
+  const HOIST = 122;          // heading tape down the pinned edge
+  const FLY_HEM = 48;         // doubled hem at the flying edge
+  const EDGE_HEM = 36;        // top and bottom hems
+  const SEAM_Y = [TH / 3, (TH * 2) / 3];
+  const SEAM_H = 24;
+
+  function surface(w, h) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    return { canvas: c, ctx: c.getContext('2d', { willReadFrequently: true }) };
+  }
+
+  function alpha(ctx) { return ctx.getImageData(0, 0, TW, TH).data; }
+
+  // --- masks ---------------------------------------------------------------
+  // Construction: the raised cloth of the band, the felled seams, the hems.
+  function makeStructureMask() {
+    const s = surface(TW, TH), x = s.ctx;
+    x.fillStyle = '#000'; x.fillRect(0, 0, TW, TH);
+    x.fillStyle = '#fff';
+    x.fillRect(0, 0, HOIST, TH);
+    x.fillRect(TW - FLY_HEM, 0, FLY_HEM, TH);
+    x.fillRect(0, 0, TW, EDGE_HEM);
+    x.fillRect(0, TH - EDGE_HEM, TW, EDGE_HEM);
+    SEAM_Y.forEach((y) => x.fillRect(HOIST, y - SEAM_H / 2, TW - HOIST - FLY_HEM, SEAM_H));
+    return alpha(x);
+  }
+
+  // Topstitching: every seam and hem gets its own run of thread.
+  function makeStitchMask() {
+    const s = surface(TW, TH), x = s.ctx;
+    x.fillStyle = '#000'; x.fillRect(0, 0, TW, TH);
+    x.strokeStyle = '#fff';
+    x.lineWidth = 4;
+    x.setLineDash([15, 11]);
+    x.lineCap = 'butt';
+    const run = (x0, y0, x1, y1) => { x.beginPath(); x.moveTo(x0, y0); x.lineTo(x1, y1); x.stroke(); };
+
+    run(16, 0, 16, TH);                 // hoist tape, inner and outer rows
+    run(HOIST - 16, 0, HOIST - 16, TH);
+    run(TW - FLY_HEM + 16, 0, TW - FLY_HEM + 16, TH);
+    run(HOIST, EDGE_HEM - 13, TW - FLY_HEM, EDGE_HEM - 13);
+    run(HOIST, TH - EDGE_HEM + 13, TW - FLY_HEM, TH - EDGE_HEM + 13);
+    SEAM_Y.forEach((y) => {
+      run(HOIST, y - SEAM_H / 2 + 5, TW - FLY_HEM, y - SEAM_H / 2 + 5);
+      run(HOIST, y + SEAM_H / 2 - 5, TW - FLY_HEM, y + SEAM_H / 2 - 5);
+    });
+
+    // The sewn-on woven label, tacked down on all four sides.
+    x.setLineDash([11, 9]);
+    x.lineWidth = 3.5;
+    x.strokeRect(TW - 470, TH - 214, 300, 104);
+    x.setLineDash([]);
+    return alpha(x);
+  }
+
+  // Everything printed: the house lockup, the composition line, the label.
+  function makeInkMask() {
+    const s = surface(TW, TH), x = s.ctx;
+    x.fillStyle = '#000'; x.fillRect(0, 0, TW, TH);
+    x.fillStyle = '#fff';
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    const cx = HOIST + (TW - HOIST - FLY_HEM) / 2;
+
+    x.font = '700 30px "Helvetica Neue", Arial, sans-serif';
+    x.fillText('A T E L I E R   ·   N O .   4 2', cx, TH * 0.235);
+
+    x.font = 'bold 152px Georgia, "Times New Roman", serif';
+    x.fillText('WOVEN', cx, TH * 0.395);
+    x.fillText('CLOTH', cx, TH * 0.555);
+
+    x.fillRect(cx - 250, TH * 0.645, 500, 4);
+
+    x.font = '600 28px "Helvetica Neue", Arial, sans-serif';
+    x.fillText('100% LINEN  ·  WARP 40s  ·  WEFT 40s  ·  CUT AND SEWN TO ORDER', cx, TH * 0.705);
+
+    // Woven label content.
+    x.font = 'bold 40px Georgia, "Times New Roman", serif';
+    x.fillText('W C', TW - 320, TH - 184);
+    x.font = '600 19px "Helvetica Neue", Arial, sans-serif';
+    x.fillText('THREE PANEL · FLAT FELLED', TW - 320, TH - 144);
+    return alpha(x);
+  }
+
+  const structure = makeStructureMask();
+  const stitch = makeStitchMask();
+  const ink = makeInkMask();
+
+  // Plain linen weave — square, matte, slightly irregular in the thread.
+  function weaveHeight(x, y) {
+    const p = 7;
+    const cx = Math.floor(x / p), cy = Math.floor(y / p);
+    const u = (x % p) / p, v = (y % p) / p;
+    const warpUp = ((cx + cy) % 2) === 0;
+    const h = warpUp ? Math.sin(u * Math.PI) : Math.sin(v * Math.PI);
+    return h + Math.sin(cx * 12.9898) * Math.sin(cy * 4.1414 + 1.9) * 0.22;
+  }
+
+  const height = new Float32Array(TW * TH);
+  for (let y = 0; y < TH; y++) {
+    for (let x = 0; x < TW; x++) {
+      const i = y * TW + x;
+      const st = structure[i * 4] / 255;
+      const th = stitch[i * 4] / 255;
+      height[i] = weaveHeight(x, y) + st * 1.5 + th * 3.4 + (ink[i * 4] / 255) * 0.22;
+    }
+  }
+
+  function blurHeight(passes) {
+    const tmp = new Float32Array(TW * TH);
+    for (let n = 0; n < passes; n++) {
+      for (let y = 0; y < TH; y++) {
+        const row = y * TW;
+        for (let x = 0; x < TW; x++) {
+          const a = height[row + (x > 0 ? x - 1 : x)], b = height[row + x];
+          const c = height[row + (x < TW - 1 ? x + 1 : x)];
+          tmp[row + x] = (a + b + b + c) * 0.25;
+        }
+      }
+      for (let x = 0; x < TW; x++) {
+        for (let y = 0; y < TH; y++) {
+          const a = tmp[(y > 0 ? y - 1 : y) * TW + x], b = tmp[y * TW + x];
+          const c = tmp[(y < TH - 1 ? y + 1 : y) * TW + x];
+          height[y * TW + x] = (a + b + b + c) * 0.25;
+        }
+      }
+    }
+  }
+
+  function makeAlbedoTexture() {
+    const s = surface(TW, TH), x = s.ctx;
+    // Three panels, each cut from its own dye lot.
+    const lots = ['#ded2b8', '#d8ccb1', '#e2d6bd'];
+    for (let k = 0; k < 3; k++) {
+      x.fillStyle = lots[k];
+      x.fillRect(0, (TH / 3) * k, TW, TH / 3 + 1);
+    }
+    const img = x.getImageData(0, 0, TW, TH), d = img.data;
+    const INK = [33, 48, 77], TAPE = [26, 37, 72], THREAD = [242, 234, 218];
+    for (let i = 0; i < TW * TH; i++) {
+      const px = i % TW;
+      const st = structure[i * 4] / 255;
+      const th = stitch[i * 4] / 255;
+      const ik = ink[i * 4] / 255;
+      const o = i * 4;
+      const shade = 0.86 + height[i] * 0.14;
+      let r = d[o] * shade, g = d[o + 1] * shade, b = d[o + 2] * shade;
+      // The heading tape is indigo canvas; the seams and hems only darken.
+      if (px < HOIST) {
+        r += (TAPE[0] - r) * 0.94; g += (TAPE[1] - g) * 0.94; b += (TAPE[2] - b) * 0.94;
+      } else if (st > 0) {
+        r *= 1 - st * 0.17; g *= 1 - st * 0.17; b *= 1 - st * 0.15;
+      }
+      if (ik > 0 && px >= HOIST) {
+        r += (INK[0] - r) * ik; g += (INK[1] - g) * ik; b += (INK[2] - b) * ik;
+      }
+      if (th > 0) {
+        r += (THREAD[0] - r) * th * 0.92; g += (THREAD[1] - g) * th * 0.92; b += (THREAD[2] - b) * th * 0.92;
+      }
+      d[o] = r; d[o + 1] = g; d[o + 2] = b;
+    }
+    x.putImageData(img, 0, 0);
+    const tex = new THREE.CanvasTexture(s.canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
+  // Mercerised topstitch thread is the only glossy thing on the flag.
+  function makeRoughnessTexture() {
+    const s = surface(TW, TH), x = s.ctx;
+    const img = x.createImageData(TW, TH), d = img.data;
+    for (let i = 0; i < TW * TH; i++) {
+      const th = stitch[i * 4] / 255;
+      const ik = ink[i * 4] / 255;
+      let r = 0.86 - height[i] * 0.05 - th * 0.42 - ik * 0.12;
+      r = Math.max(0.18, Math.min(0.98, r));
+      const o = i * 4;
+      d[o] = d[o + 1] = d[o + 2] = r * 255; d[o + 3] = 255;
+    }
+    x.putImageData(img, 0, 0);
+    return new THREE.CanvasTexture(s.canvas);
+  }
+
+  function makeNormalTexture(strength) {
+    const s = surface(TW, TH);
+    const img = s.ctx.createImageData(TW, TH), d = img.data;
+    for (let y = 0; y < TH; y++) {
+      const yp = y > 0 ? y - 1 : y, yn = y < TH - 1 ? y + 1 : y;
+      for (let x = 0; x < TW; x++) {
+        const xp = x > 0 ? x - 1 : x, xn = x < TW - 1 ? x + 1 : x;
+        const dx = (height[y * TW + xp] - height[y * TW + xn]) * strength;
+        const dy = (height[yp * TW + x] - height[yn * TW + x]) * strength;
+        const len = Math.sqrt(dx * dx + dy * dy + 1);
+        const o = (y * TW + x) * 4;
+        d[o] = (dx / len * 0.5 + 0.5) * 255;
+        d[o + 1] = (dy / len * 0.5 + 0.5) * 255;
+        d[o + 2] = (1 / len * 0.5 + 0.5) * 255;
+        d[o + 3] = 255;
+      }
+    }
+    s.ctx.putImageData(img, 0, 0);
+    return new THREE.CanvasTexture(s.canvas);
+  }
+
+  // A photographer's seamless: warm sweep behind, softbox above, bounce left.
+  function makeStudioEnvironment(renderer) {
+    const W = 1024, H = 512, s = surface(W, H), x = s.ctx;
+    const g = x.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#2a2620');
+    g.addColorStop(0.46, '#1a1713');
+    g.addColorStop(1, '#0d0b09');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    const box = (cx, cy, rw, rh, color, a) => {
+      const grad = x.createRadialGradient(cx, cy, 0, cx, cy, Math.max(rw, rh));
+      grad.addColorStop(0, color); grad.addColorStop(1, 'rgba(0,0,0,0)');
+      x.globalAlpha = a; x.fillStyle = grad;
+      x.save(); x.translate(cx, cy); x.scale(rw / Math.max(rw, rh), rh / Math.max(rw, rh));
+      x.beginPath(); x.arc(0, 0, Math.max(rw, rh), 0, Math.PI * 2); x.fill(); x.restore();
+      x.globalAlpha = 1;
+    };
+    box(W * 0.30, H * 0.14, 340, 130, '#fffaf0', 1);
+    box(W * 0.78, H * 0.40, 220, 200, '#c8d8ea', 0.55);
+    box(W * 0.06, H * 0.62, 200, 240, '#e8d3ac', 0.5);
+    const tex = new THREE.CanvasTexture(s.canvas);
+    tex.mapping = THREE.EquirectangularReflectionMapping;
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    pmrem.compileEquirectangularShader();
+    const env = pmrem.fromEquirectangular(tex).texture;
+    pmrem.dispose(); tex.dispose();
+    return env;
+  }
+
+  function makeBackdropTexture() {
+    const W = 512, H = 320, s = surface(W, H), x = s.ctx;
+    x.fillStyle = '#100e0b'; x.fillRect(0, 0, W, H);
+    const g = x.createRadialGradient(W * 0.44, H * 0.36, 0, W * 0.44, H * 0.36, W * 0.60);
+    g.addColorStop(0, 'rgba(96,84,66,0.95)');
+    g.addColorStop(0.5, 'rgba(44,38,30,0.6)');
+    g.addColorStop(1, 'rgba(13,11,9,0)');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    const tex = new THREE.CanvasTexture(s.canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
+  /* ------------------------------------------------------------- scene -- */
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.16;
+
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
+  const scene = new THREE.Scene();
+  scene.background = makeBackdropTexture();
+  scene.environment = makeStudioEnvironment(renderer);
+
+  const BW = 5.0, BH = 2.9;
+  const GX = 52, GY = 34;
+  const geo = new THREE.PlaneGeometry(BW, BH, GX, GY);
+
+  const albedo = makeAlbedoTexture();
+  blurHeight(1);
+  const normalMap = makeNormalTexture(2.6);
+  const roughnessMap = makeRoughnessTexture();
+  [albedo, normalMap, roughnessMap].forEach((t) => { t.anisotropy = maxAniso; });
+
+  const mat = new THREE.MeshPhysicalMaterial({
+    map: albedo,
+    normalMap,
+    normalScale: new THREE.Vector2(0.55, 0.55),
+    roughnessMap,
+    roughness: 1.0,
+    metalness: 0.0,
+    side: THREE.DoubleSide,
+    envMapIntensity: 1.15,
+    sheen: 0.6,
+    sheenColor: new THREE.Color('#f3e6cd'),
+    sheenRoughness: 0.62,
+  });
+
+  const flag = new THREE.Mesh(geo, mat);
+  const rig = new THREE.Group();
+  rig.add(flag);
+  scene.add(rig);
+
+  /* ---------------------------------------------------------- hardware -- */
+  const brass = new THREE.MeshStandardMaterial({ color: 0xb98f47, metalness: 1.0, roughness: 0.32 });
+  const steel = new THREE.MeshStandardMaterial({ color: 0x8d8f95, metalness: 1.0, roughness: 0.28 });
+
+  const HOIST_X = -BW / 2;
+  const GROMMET_V = [0.09, 0.5, 0.91];       // down the hoist, in 0..1 of BH
+  const grommets = GROMMET_V.map((v) => {
+    const g = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.021, 12, 28), brass);
+    g.position.set(HOIST_X + 0.05, BH / 2 - v * BH, 0);
+    rig.add(g);
+    return g;
+  });
+
+  const mast = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.035, 0.042, BH * 1.5, 18),
+    steel,
+  );
+  mast.position.set(HOIST_X - 0.16, -BH * 0.12, -0.04);
+  rig.add(mast);
+  const finial = new THREE.Mesh(new THREE.SphereGeometry(0.072, 20, 14), brass);
+  finial.position.set(HOIST_X - 0.16, -BH * 0.12 + BH * 0.75 + 0.05, -0.04);
+  rig.add(finial);
+
+  // The clips that carry the hoist grommets on the mast.
+  grommets.forEach((g) => {
+    const clip = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.011, 10, 22), steel);
+    clip.position.set(HOIST_X - 0.11, g.position.y, -0.02);
+    clip.rotation.y = Math.PI / 2.4;
+    rig.add(clip);
+  });
+
+  /* ------------------------------------------------------------ lights -- */
+  scene.add(new THREE.HemisphereLight(0xcadcf2, 0x4a3d2c, 0.75));
+  const key = new THREE.DirectionalLight(0xfff4e0, 2.5);
+  key.position.set(2.6, 3.4, 3.0); scene.add(key);
+  const bounce = new THREE.DirectionalLight(0xe6cfa4, 0.85);
+  bounce.position.set(-3.4, -1.6, 2.0); scene.add(bounce);
+  const back = new THREE.DirectionalLight(0xfff0d8, 1.5);
+  back.position.set(-1.6, 1.4, -3.2); scene.add(back);
+
+  /* ----------------------------------------------------------- physics --
+     Pinned down the hoist instead of along the top, so the wave travels out
+     to the fly and the free corners snap the way a flown flag does. */
+  const pos = geo.attributes.position;
+  const N = (GX + 1) * (GY + 1);
+  const cur = new Float32Array(N * 3), prev = new Float32Array(N * 3), rest = new Float32Array(N * 3);
+  const pinned = new Uint8Array(N);
+  const idx = (ix, iy) => ix + iy * (GX + 1);
+
+  for (let i = 0; i < N; i++) {
+    const ax = pos.getX(i), ay = pos.getY(i);
+    cur[i * 3] = prev[i * 3] = rest[i * 3] = ax;
+    cur[i * 3 + 1] = prev[i * 3 + 1] = rest[i * 3 + 1] = ay;
+    cur[i * 3 + 2] = prev[i * 3 + 2] = rest[i * 3 + 2] = 0;
+  }
+  for (let iy = 0; iy <= GY; iy++) pinned[idx(0, iy)] = 1;
+
+  const restH = BW / GX, restV = BH / GY;
+  const GRAV = -0.22, DAMP = 0.986, DT = 0.016;
+
+  function wind(ix, iy, t) {
+    const cx = ix / GX, cy = iy / GY;
+    // Amplitude grows with distance from the hoist: the fly end does the work,
+    // while a steady outward pull keeps the flag flown rather than limp.
+    const reach = cx * (0.35 + 0.65 * cx);
+    const gust = 0.78 + 0.26 * Math.sin(t * 0.53) + 0.14 * Math.sin(t * 1.47 + 0.9);
+    const travel = t * 4.2 - cx * 6.6;
+    const fz = (Math.sin(travel) + 0.38 * Math.sin(travel * 1.9 + cy * 2.6)) * 3.4 * reach * gust;
+    const fy = Math.sin(travel * 0.8 + 1.2) * 0.85 * reach;
+    const fx = 2.6 * reach * gust;
+    return [fx, fy, fz];
+  }
+
+  function solve(a, b, rl) {
+    const ax = cur[a * 3], ay = cur[a * 3 + 1], az = cur[a * 3 + 2];
+    let dx = cur[b * 3] - ax, dy = cur[b * 3 + 1] - ay, dz = cur[b * 3 + 2] - az;
+    const d = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-6;
+    const diff = (d - rl) / d * 0.5;
+    dx *= diff; dy *= diff; dz *= diff;
+    const pa = pinned[a], pb = pinned[b];
+    if (!pa && !pb) {
+      cur[a * 3] += dx; cur[a * 3 + 1] += dy; cur[a * 3 + 2] += dz;
+      cur[b * 3] -= dx; cur[b * 3 + 1] -= dy; cur[b * 3 + 2] -= dz;
+    } else if (pa && !pb) { cur[b * 3] -= dx * 2; cur[b * 3 + 1] -= dy * 2; cur[b * 3 + 2] -= dz * 2; }
+    else if (!pa && pb) { cur[a * 3] += dx * 2; cur[a * 3 + 1] += dy * 2; cur[a * 3 + 2] += dz * 2; }
+  }
+
+  function step(t) {
+    for (let iy = 0; iy <= GY; iy++) {
+      for (let ix = 0; ix <= GX; ix++) {
+        const i = idx(ix, iy);
+        if (pinned[i]) continue;
+        const f = wind(ix, iy, t);
+        for (let k = 0; k < 3; k++) {
+          const j = i * 3 + k;
+          const a = k === 0 ? f[0] : k === 1 ? f[1] + GRAV : f[2];
+          const v = (cur[j] - prev[j]) * DAMP;
+          prev[j] = cur[j];
+          cur[j] = cur[j] + v + a * DT * DT;
+        }
+      }
+    }
+    for (let it = 0; it < 4; it++) {
+      for (let iy = 0; iy <= GY; iy++) for (let ix = 0; ix < GX; ix++) solve(idx(ix, iy), idx(ix + 1, iy), restH);
+      for (let iy = 0; iy < GY; iy++) for (let ix = 0; ix <= GX; ix++) solve(idx(ix, iy), idx(ix, iy + 1), restV);
+    }
+    // The heading tape is sewn to a rigid edge; hold it exactly.
+    for (let iy = 0; iy <= GY; iy++) {
+      const i = idx(0, iy);
+      for (let k = 0; k < 3; k++) { cur[i * 3 + k] = rest[i * 3 + k]; prev[i * 3 + k] = rest[i * 3 + k]; }
+    }
+  }
+
+  function commit() {
+    for (let i = 0; i < N; i++) pos.setXYZ(i, cur[i * 3], cur[i * 3 + 1], cur[i * 3 + 2]);
+    pos.needsUpdate = true;
+    geo.computeVertexNormals();
+  }
+
+  /* --------------------------------------------------------------- fit -- */
+  let camera;
+  function fit() {
+    const w = window.innerWidth, h = window.innerHeight;
+    renderer.setSize(w, h, false);
+    const aspect = w / h;
+    camera = new THREE.PerspectiveCamera(40, aspect, 0.1, 100);
+    const vFit = (BH * 1.12 / 2) / Math.tan(40 * Math.PI / 360);
+    const hFit = ((BW + 1.0) / 2) / Math.tan(40 * Math.PI / 360) / aspect;
+    camera.position.set(0.10, 0.06, Math.max(vFit, hFit) * 1.13 + 0.30);
+    camera.lookAt(0.10, 0.0, 0);
+  }
+  window.addEventListener('resize', fit);
+  fit();
+
+  function draw(t) {
+    // The mast leans a few degrees so the flag is never seen dead flat.
+    rig.rotation.y = -0.16 + Math.sin(t * 0.11) * 0.045;
+    rig.rotation.z = Math.sin(t * 0.08 + 0.7) * 0.012;
+    camera.position.y = 0.06 + Math.sin(t * 0.15) * 0.06;
+    camera.lookAt(0.10, 0.0, 0);
+    renderer.render(scene, camera);
+  }
+
+  let running = false, raf = 0, t = 0;
+  function loop() {
+    if (!running) return;
+    t += DT;
+    step(t); commit(); draw(t);
+    raf = requestAnimationFrame(loop);
+  }
+  function start() { if (running) return; running = true; raf = requestAnimationFrame(loop); }
+  function stop() { running = false; cancelAnimationFrame(raf); }
+
+  window.__seek = (time) => {
+    const target = Math.max(0, time);
+    if (target < t) { t = 0; for (let i = 0; i < N * 3; i++) { cur[i] = rest[i]; prev[i] = rest[i]; } }
+    while (t < target - DT * 0.5) { t += DT; step(t); }
+    commit(); draw(t);
+  };
+
+  for (let s = 0; s < 160; s++) step(s * DT);
+  t = 160 * DT;
+  if (reduce) {
+    commit(); draw(t);
+  } else {
+    start();
+    document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+  }
+})();
+</script>
+</body>
+</html>

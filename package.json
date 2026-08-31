@@ -1,6 +1,6 @@
 {
   "name": "@designcodeio/threeui",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Open-source React components and interactive templates from ThreeUI Community.",
   "license": "MIT",
   "type": "module",

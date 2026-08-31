@@ -1,5 +1,11 @@
 export function resolveDetailPreviewSource(fallback: string) {
-  const filename = fallback.split("/").pop();
+  const absolute = /^https?:\/\//i.test(fallback);
+  const url = new URL(fallback, "https://threeui.local");
+  const filename = url.pathname.split("/").pop();
   if (!filename || !/\.(?:mp4|webm)$/i.test(filename)) return fallback;
-  return `/previews/detail/${filename.replace(/\.(?:mp4|webm)$/i, ".webm")}`;
+  const previewIndex = url.pathname.lastIndexOf("/previews/");
+  if (previewIndex < 0) return fallback;
+
+  url.pathname = `${url.pathname.slice(0, previewIndex)}/previews/detail/${filename.replace(/\.(?:mp4|webm)$/i, ".webm")}`;
+  return absolute ? url.href : `${url.pathname}${url.search}${url.hash}`;
 }

@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Woven Cloth · Iridescent Silk</title>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<style>
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #05060d; }
+  #cloth { display: block; width: 100%; height: 100%; }
+  #vignette {
+    position: fixed; inset: 0; pointer-events: none;
+    background: radial-gradient(78% 70% at 50% 44%, transparent 46%, rgba(3,4,10,.78) 100%);
+  }
+</style>
+</head>
+<body>
+<canvas id="cloth"></canvas>
+<div id="vignette"></div>
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const canvas = document.getElementById('cloth');
+  if (!window.THREE) return;
+
+  /* ---------------------------------------------------------------- maps --
+     Everything the silk needs is drawn once into 2D canvases: a satin weave
+     height field, the wordmark woven into it as raised warp floats, and a
+     smooth film-thickness field that makes the interference colour travel. */
+
+  const TW = 1600, TH = 1000;
+
+  function surface(w, h) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    return { canvas: c, ctx: c.getContext('2d', { willReadFrequently: true }) };
+  }
+
+  // Wordmark drawn once as a white-on-black coverage mask.
+  function makeWordmarkMask() {
+    const s = surface(TW, TH), x = s.ctx;
+    x.fillStyle = '#000'; x.fillRect(0, 0, TW, TH);
+    x.fillStyle = '#fff';
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.font = 'bold 96px Georgia, "Times New Roman", serif';
+    x.fillText('W C', TW / 2, 208);
+    x.font = '700 30px "Helvetica Neue", Arial, sans-serif';
+    x.fillText('· A T E L I E R ·', TW / 2, 278);
+    x.font = 'bold 150px Georgia, "Times New Roman", serif';
+    x.fillText('WOVEN', TW / 2, 452);
+    x.fillText('CLOTH', TW / 2, 600);
+    x.font = '700 38px "Helvetica Neue", Arial, sans-serif';
+    x.fillText('I R I D E S C E N T   S I L K', TW / 2, 718);
+    // Hairline frame, woven as a raised rib rather than printed.
+    x.strokeStyle = '#fff'; x.lineWidth = 7;
+    x.strokeRect(64, 64, TW - 128, TH - 128);
+    x.lineWidth = 3;
+    x.strokeRect(92, 92, TW - 184, TH - 184);
+    return x.getImageData(0, 0, TW, TH).data;
+  }
+
+  // Five-harness satin: long warp floats broken by a scattered binding point.
+  function weaveHeight(x, y) {
+    const p = 8;
+    const cx = Math.floor(x / p), cy = Math.floor(y / p);
+    const u = (x % p) / p, v = (y % p) / p;
+    const binding = ((cx * 2 + cy) % 5) === 0;
+    const profile = (t) => Math.sin(t * Math.PI);
+    let h = binding ? profile(v) * 0.9 : profile(u);
+    // Slubs: a few threads run thicker than their neighbours.
+    h += Math.sin(cx * 12.9898) * Math.sin(cx * 4.1414 + 2.3) * 0.16;
+    h += Math.sin(cy * 7.233 + 1.7) * 0.06;
+    return h;
+  }
+
+  function valueNoise(seed) {
+    const G = 64, grid = new Float32Array(G * G);
+    let s = seed;
+    const rnd = () => (s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+    for (let i = 0; i < G * G; i++) grid[i] = rnd();
+    const smooth = (t) => t * t * (3 - 2 * t);
+    return (u, v) => {
+      const fx = u * G, fy = v * G;
+      const ix = Math.floor(fx), iy = Math.floor(fy);
+      const tx = smooth(fx - ix), ty = smooth(fy - iy);
+      const at = (a, b) => grid[((b % G) + G) % G * G + ((a % G) + G) % G];
+      const a = at(ix, iy), b = at(ix + 1, iy), c = at(ix, iy + 1), d = at(ix + 1, iy + 1);
+      return (a + (b - a) * tx) + ((c + (d - c) * tx) - (a + (b - a) * tx)) * ty;
+    };
+  }
+
+  const mask = makeWordmarkMask();
+
+  // One pass builds the height field; albedo, normal and roughness share it.
+  const height = new Float32Array(TW * TH);
+  for (let y = 0; y < TH; y++) {
+    for (let x = 0; x < TW; x++) {
+      const i = y * TW + x;
+      const m = mask[i * 4] / 255;
+      // Inside a letter the warp floats ride higher and longer.
+      height[i] = weaveHeight(x, y) * (1 - m * 0.30) + m * 1.15;
+    }
+  }
+
+  function blurHeight(passes) {
+    const tmp = new Float32Array(TW * TH);
+    for (let n = 0; n < passes; n++) {
+      for (let y = 0; y < TH; y++) {
+        const row = y * TW;
+        for (let x = 0; x < TW; x++) {
+          const a = height[row + (x > 0 ? x - 1 : x)];
+          const b = height[row + x];
+          const c = height[row + (x < TW - 1 ? x + 1 : x)];
+          tmp[row + x] = (a + b + b + c) * 0.25;
+        }
+      }
+      for (let x = 0; x < TW; x++) {
+        for (let y = 0; y < TH; y++) {
+          const a = tmp[(y > 0 ? y - 1 : y) * TW + x];
+          const b = tmp[y * TW + x];
+          const c = tmp[(y < TH - 1 ? y + 1 : y) * TW + x];
+          height[y * TW + x] = (a + b + b + c) * 0.25;
+        }
+      }
+    }
+  }
+
+  function makeNormalTexture(strength) {
+    const s = surface(TW, TH);
+    const img = s.ctx.createImageData(TW, TH), d = img.data;
+    for (let y = 0; y < TH; y++) {
+      const yp = y > 0 ? y - 1 : y, yn = y < TH - 1 ? y + 1 : y;
+      for (let x = 0; x < TW; x++) {
+        const xp = x > 0 ? x - 1 : x, xn = x < TW - 1 ? x + 1 : x;
+        const dx = (height[y * TW + xp] - height[y * TW + xn]) * strength;
+        const dy = (height[yp * TW + x] - height[yn * TW + x]) * strength;
+        const len = Math.sqrt(dx * dx + dy * dy + 1);
+        const o = (y * TW + x) * 4;
+        d[o] = (dx / len * 0.5 + 0.5) * 255;
+        d[o + 1] = (dy / len * 0.5 + 0.5) * 255;
+        d[o + 2] = (1 / len * 0.5 + 0.5) * 255;
+        d[o + 3] = 255;
+      }
+    }
+    s.ctx.putImageData(img, 0, 0);
+    return new THREE.CanvasTexture(s.canvas);
+  }
+
+  function makeAlbedoTexture() {
+    const s = surface(TW, TH), x = s.ctx;
+    const g = x.createLinearGradient(0, 0, TW * 0.35, TH);
+    g.addColorStop(0, '#161033');
+    g.addColorStop(0.45, '#0d1030');
+    g.addColorStop(1, '#100b26');
+    x.fillStyle = g; x.fillRect(0, 0, TW, TH);
+    const img = x.getImageData(0, 0, TW, TH), d = img.data;
+    for (let i = 0; i < TW * TH; i++) {
+      const m = mask[i * 4] / 255;
+      const shade = 0.88 + height[i] * 0.10;
+      const o = i * 4;
+      d[o] = Math.min(255, d[o] * shade + m * 96);
+      d[o + 1] = Math.min(255, d[o + 1] * shade + m * 78);
+      d[o + 2] = Math.min(255, d[o + 2] * shade + m * 118);
+    }
+    x.putImageData(img, 0, 0);
+    const tex = new THREE.CanvasTexture(s.canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
+  // Satin floats inside the letters read glossier than the matte ground.
+  function makeRoughnessTexture() {
+    const s = surface(TW, TH), x = s.ctx;
+    const img = x.createImageData(TW, TH), d = img.data;
+    const grain = valueNoise(9271);
+    for (let y = 0; y < TH; y++) {
+      for (let xx = 0; xx < TW; xx++) {
+        const i = y * TW + xx;
+        const m = mask[i * 4] / 255;
+        const n = grain(xx / TW * 5, y / TH * 5);
+        let r = 0.30 - height[i] * 0.07 + n * 0.09 - m * 0.16;
+        r = Math.max(0.04, Math.min(0.8, r));
+        const o = i * 4;
+        d[o] = d[o + 1] = d[o + 2] = r * 255; d[o + 3] = 255;
+      }
+    }
+    x.putImageData(img, 0, 0);
+    return new THREE.CanvasTexture(s.canvas);
+  }
+
+  // Film thickness drives the interference hue; broad and smooth so the
+  // colour sweeps across the folds instead of flickering per-thread.
+  function makeThicknessTexture() {
+    const W = 512, H = 320, s = surface(W, H), x = s.ctx;
+    const img = x.createImageData(W, H), d = img.data;
+    const a = valueNoise(4471), b = valueNoise(88231);
+    for (let y = 0; y < H; y++) {
+      for (let xx = 0; xx < W; xx++) {
+        const u = xx / W, v = y / H;
+        const n = a(u * 3.4, v * 2.4) * 0.58 + b(u * 8.5, v * 5.6) * 0.42;
+        const o = (y * W + xx) * 4;
+        const sweep = 0.5 + 0.42 * Math.sin(u * Math.PI * 2 - v * 1.15);
+        const t = Math.max(0, Math.min(1, sweep + (n - 0.5) * 0.26));
+        d[o] = d[o + 1] = d[o + 2] = t * 255; d[o + 3] = 255;
+      }
+    }
+    x.putImageData(img, 0, 0);
+    return new THREE.CanvasTexture(s.canvas);
+  }
+
+  /* ------------------------------------------------------- environment --
+     A small studio painted into an equirectangular canvas: three softboxes
+     of different colour temperature, which is what the iridescent film has
+     to break apart into colour. */
+  function makeStudioEnvironment(renderer) {
+    const W = 1024, H = 512, s = surface(W, H), x = s.ctx;
+    const g = x.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#0a0c1c');
+    g.addColorStop(0.5, '#05060e');
+    g.addColorStop(1, '#02030a');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+
+    const box = (cx, cy, w, h, color, alpha) => {
+      const grad = x.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h));
+      grad.addColorStop(0, color);
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      x.globalAlpha = alpha;
+      x.fillStyle = grad;
+      x.save(); x.translate(cx, cy); x.scale(w / Math.max(w, h), h / Math.max(w, h));
+      x.beginPath(); x.arc(0, 0, Math.max(w, h), 0, Math.PI * 2); x.fill();
+      x.restore();
+      x.globalAlpha = 1;
+    };
+
+    box(W * 0.24, H * 0.20, 300, 120, '#fff3e2', 1);      // warm key overhead
+    box(W * 0.74, H * 0.34, 230, 190, '#7fd8ff', 0.95);   // cool side fill
+    box(W * 0.52, H * 0.86, 340, 130, '#ff5fa8', 0.55);   // magenta bounce
+    box(W * 0.02, H * 0.55, 160, 220, '#9d7bff', 0.5);    // violet rim
+
+    const tex = new THREE.CanvasTexture(s.canvas);
+    tex.mapping = THREE.EquirectangularReflectionMapping;
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    pmrem.compileEquirectangularShader();
+    const env = pmrem.fromEquirectangular(tex).texture;
+    pmrem.dispose();
+    tex.dispose();
+    return env;
+  }
+
+  function makeBackdropTexture() {
+    const W = 512, H = 320, s = surface(W, H), x = s.ctx;
+    x.fillStyle = '#04050c'; x.fillRect(0, 0, W, H);
+    const g = x.createRadialGradient(W * 0.5, H * 0.42, 0, W * 0.5, H * 0.42, W * 0.62);
+    g.addColorStop(0, 'rgba(58,42,120,0.85)');
+    g.addColorStop(0.45, 'rgba(22,20,58,0.55)');
+    g.addColorStop(1, 'rgba(3,4,11,0)');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    const tex = new THREE.CanvasTexture(s.canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
+  /* ------------------------------------------------------------- scene -- */
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.48;
+
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
+  const scene = new THREE.Scene();
+  scene.background = makeBackdropTexture();
+  scene.environment = makeStudioEnvironment(renderer);
+
+  const BW = 4.7, BH = 2.8;
+  const GX = 56, GY = 40;
+  const geo = new THREE.PlaneGeometry(BW, BH, GX, GY);
+
+  const albedo = makeAlbedoTexture();
+  blurHeight(2);
+  const normalMap = makeNormalTexture(2.4);
+  const roughnessMap = makeRoughnessTexture();
+  const thicknessMap = makeThicknessTexture();
+  thicknessMap.wrapS = THREE.RepeatWrapping;
+  [albedo, normalMap, roughnessMap, thicknessMap].forEach((t) => { t.anisotropy = maxAniso; });
+
+  const mat = new THREE.MeshPhysicalMaterial({
+    map: albedo,
+    normalMap,
+    normalScale: new THREE.Vector2(0.24, 0.24),
+    roughnessMap,
+    roughness: 1.0,
+    metalness: 0.45,
+    side: THREE.DoubleSide,
+    envMapIntensity: 2.6,
+    iridescence: 1.0,
+    iridescenceIOR: 2.2,
+    iridescenceThicknessRange: [300, 820],
+    iridescenceThicknessMap: thicknessMap,
+    sheen: 0.3,
+    sheenColor: new THREE.Color('#a9d9ff'),
+    sheenRoughness: 0.32,
+  });
+
+  const mesh = new THREE.Mesh(geo, mat);
+  scene.add(mesh);
+
+  scene.add(new THREE.AmbientLight(0x3b3676, 0.55));
+  const key = new THREE.DirectionalLight(0xffeede, 2.1);
+  key.position.set(-3.1, 3.2, 3.4); scene.add(key);
+  const rimCool = new THREE.DirectionalLight(0x3fbcff, 2.9);
+  rimCool.position.set(3.6, 0.6, 2.2); scene.add(rimCool);
+  const rimWarm = new THREE.DirectionalLight(0xff3d8e, 2.4);
+  rimWarm.position.set(0.4, -2.6, 1.6); scene.add(rimWarm);
+  const fill = new THREE.DirectionalLight(0x9d7bff, 1.6);
+  fill.position.set(-3.2, -1.0, 2.6); scene.add(fill);
+
+  /* ----------------------------------------------------------- physics --
+     The parent's Verlet sheet, run finer and slower so the specular travels
+     over the folds instead of chattering. The pinned top row is driven on a
+     shallow standing wave, which is what sets the vertical folds. */
+  const pos = geo.attributes.position;
+  const N = (GX + 1) * (GY + 1);
+  const cur = new Float32Array(N * 3), prev = new Float32Array(N * 3), rest = new Float32Array(N * 3);
+  const pinned = new Uint8Array(N);
+
+  for (let i = 0; i < N; i++) {
+    const ax = pos.getX(i), ay = pos.getY(i);
+    cur[i * 3] = prev[i * 3] = rest[i * 3] = ax;
+    cur[i * 3 + 1] = prev[i * 3 + 1] = rest[i * 3 + 1] = ay;
+    cur[i * 3 + 2] = prev[i * 3 + 2] = rest[i * 3 + 2] = 0;
+  }
+  for (let ix = 0; ix <= GX; ix++) pinned[ix] = 1;
+
+  const idx = (ix, iy) => ix + iy * (GX + 1);
+  const restH = BW / GX, restV = BH / GY;
+  const GRAV = -2.15, DAMP = 0.989, DT = 0.016;
+
+  function wind(ix, iy, t) {
+    const cx = ix / GX, cy = iy / GY;
+    const travel = t * 1.15 - cy * 3.4;
+    const gust = 0.52 + 0.34 * Math.sin(t * 0.44) + 0.16 * Math.sin(t * 1.31 + 1.1);
+    const amp = 2.15 * cy;
+    const fz = (Math.sin(travel + cx * 2.6) + 0.46 * Math.sin(travel * 1.55 + cx * 5.1)) * amp * gust;
+    const fx = Math.sin(t * 0.6 + cy * 1.9) * 0.9 * cy * (cx - 0.5);
+    return [fx, -0.3 * cy, fz];
+  }
+
+  // Standing folds: the rail the silk hangs from breathes in and out.
+  function railZ(ix, t) {
+    const cx = ix / GX;
+    return Math.sin(cx * Math.PI * 3.0 + t * 0.22) * 0.15
+         + Math.sin(cx * Math.PI * 5.0 - t * 0.15) * 0.05;
+  }
+
+  function solve(a, b, rl) {
+    const ax = cur[a * 3], ay = cur[a * 3 + 1], az = cur[a * 3 + 2];
+    let dx = cur[b * 3] - ax, dy = cur[b * 3 + 1] - ay, dz = cur[b * 3 + 2] - az;
+    const d = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-6;
+    const diff = (d - rl) / d * 0.5;
+    dx *= diff; dy *= diff; dz *= diff;
+    const pa = pinned[a], pb = pinned[b];
+    if (!pa && !pb) {
+      cur[a * 3] += dx; cur[a * 3 + 1] += dy; cur[a * 3 + 2] += dz;
+      cur[b * 3] -= dx; cur[b * 3 + 1] -= dy; cur[b * 3 + 2] -= dz;
+    } else if (pa && !pb) { cur[b * 3] -= dx * 2; cur[b * 3 + 1] -= dy * 2; cur[b * 3 + 2] -= dz * 2; }
+    else if (!pa && pb) { cur[a * 3] += dx * 2; cur[a * 3 + 1] += dy * 2; cur[a * 3 + 2] += dz * 2; }
+  }
+
+  function step(t) {
+    for (let iy = 0; iy <= GY; iy++) {
+      for (let ix = 0; ix <= GX; ix++) {
+        const i = idx(ix, iy);
+        if (pinned[i]) continue;
+        const f = wind(ix, iy, t);
+        for (let k = 0; k < 3; k++) {
+          const j = i * 3 + k;
+          const a = k === 0 ? f[0] : k === 1 ? f[1] + GRAV : f[2];
+          const v = (cur[j] - prev[j]) * DAMP;
+          prev[j] = cur[j];
+          cur[j] = cur[j] + v + a * DT * DT;
+        }
+      }
+    }
+    for (let it = 0; it < 4; it++) {
+      for (let iy = 0; iy <= GY; iy++) for (let ix = 0; ix < GX; ix++) solve(idx(ix, iy), idx(ix + 1, iy), restH);
+      for (let iy = 0; iy < GY; iy++) for (let ix = 0; ix <= GX; ix++) solve(idx(ix, iy), idx(ix, iy + 1), restV);
+    }
+    for (let ix = 0; ix <= GX; ix++) {
+      const i = ix, z = railZ(ix, t);
+      cur[i * 3] = prev[i * 3] = rest[i * 3];
+      cur[i * 3 + 1] = prev[i * 3 + 1] = rest[i * 3 + 1];
+      cur[i * 3 + 2] = prev[i * 3 + 2] = z;
+    }
+  }
+
+  function commit() {
+    for (let i = 0; i < N; i++) pos.setXYZ(i, cur[i * 3], cur[i * 3 + 1], cur[i * 3 + 2]);
+    pos.needsUpdate = true;
+    geo.computeVertexNormals();
+  }
+
+  /* -------------------------------------------------------------- bloom --
+     Scene into a half-float target, a bright pass at quarter resolution,
+     two separable blurs, then one composite that tone-maps to the screen. */
+  const rtScene = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
+  const rtA = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType });
+  const rtB = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType });
+  [rtScene, rtA, rtB].forEach((rt) => {
+    rt.texture.minFilter = THREE.LinearFilter;
+    rt.texture.magFilter = THREE.LinearFilter;
+    rt.texture.generateMipmaps = false;
+  });
+
+  const quadGeo = new THREE.PlaneGeometry(2, 2);
+  const quadCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const quadScene = new THREE.Scene();
+  const quad = new THREE.Mesh(quadGeo, null);
+  quadScene.add(quad);
+
+  const VERT = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }';
+
+  const brightMat = new THREE.ShaderMaterial({
+    uniforms: { tDiffuse: { value: null }, threshold: { value: 0.72 } },
+    vertexShader: VERT,
+    fragmentShader: [
+      'uniform sampler2D tDiffuse; uniform float threshold; varying vec2 vUv;',
+      'void main(){',
+      '  vec3 c = texture2D(tDiffuse, vUv).rgb;',
+      '  float l = dot(c, vec3(0.2126, 0.7152, 0.0722));',
+      '  float k = max(l - threshold, 0.0) / max(l, 1e-4);',
+      '  gl_FragColor = vec4(c * k, 1.0);',
+      '}',
+    ].join('\n'),
+  });
+
+  const blurMat = new THREE.ShaderMaterial({
+    uniforms: { tDiffuse: { value: null }, direction: { value: new THREE.Vector2(1, 0) } },
+    vertexShader: VERT,
+    fragmentShader: [
+      'uniform sampler2D tDiffuse; uniform vec2 direction; varying vec2 vUv;',
+      'void main(){',
+      '  vec3 sum = texture2D(tDiffuse, vUv).rgb * 0.2270270270;',
+      '  sum += texture2D(tDiffuse, vUv + direction * 1.3846153846).rgb * 0.3162162162;',
+      '  sum += texture2D(tDiffuse, vUv - direction * 1.3846153846).rgb * 0.3162162162;',
+      '  sum += texture2D(tDiffuse, vUv + direction * 3.2307692308).rgb * 0.0702702703;',
+      '  sum += texture2D(tDiffuse, vUv - direction * 3.2307692308).rgb * 0.0702702703;',
+      '  gl_FragColor = vec4(sum, 1.0);',
+      '}',
+    ].join('\n'),
+  });
+
+  const compositeMat = new THREE.ShaderMaterial({
+    uniforms: { tDiffuse: { value: null }, tBloom: { value: null }, strength: { value: 0.62 } },
+    vertexShader: VERT,
+    fragmentShader: [
+      'uniform sampler2D tDiffuse; uniform sampler2D tBloom; uniform float strength; varying vec2 vUv;',
+      'void main(){',
+      '  vec3 base = texture2D(tDiffuse, vUv).rgb;',
+      '  vec3 glow = texture2D(tBloom, vUv).rgb;',
+      '  gl_FragColor = vec4(base + glow * strength, 1.0);',
+      '  #include <tonemapping_fragment>',
+      '  #include <colorspace_fragment>',
+      '}',
+    ].join('\n'),
+  });
+
+  function blit(material, target) {
+    quad.material = material;
+    renderer.setRenderTarget(target);
+    renderer.render(quadScene, quadCam);
+  }
+
+  /* --------------------------------------------------------------- fit -- */
+  let camera, cw = 1, ch = 1;
+  function fit() {
+    cw = window.innerWidth; ch = window.innerHeight;
+    renderer.setSize(cw, ch, false);
+    const dpr = renderer.getPixelRatio();
+    const pw = Math.max(2, Math.floor(cw * dpr)), ph = Math.max(2, Math.floor(ch * dpr));
+    rtScene.setSize(pw, ph);
+    rtA.setSize(Math.max(2, pw >> 2), Math.max(2, ph >> 2));
+    rtB.setSize(Math.max(2, pw >> 2), Math.max(2, ph >> 2));
+    const aspect = cw / ch;
+    camera = new THREE.PerspectiveCamera(40, aspect, 0.1, 100);
+    const vFit = (BH / 2) / Math.tan(40 * Math.PI / 360);
+    const hFit = (BW / 2) / Math.tan(40 * Math.PI / 360) / aspect;
+    camera.position.set(0, 0.02, Math.max(vFit, hFit) * 0.98 + 0.24);
+    camera.lookAt(0, -0.04, 0);
+  }
+  window.addEventListener('resize', fit);
+  fit();
+
+  function draw(t) {
+    thicknessMap.offset.x = (t * 0.028) % 1;
+    // Slow parallax so the highlight sweeps rather than sits.
+    const base = camera.position.z;
+    camera.position.x = Math.sin(t * 0.13) * 0.30;
+    camera.position.y = 0.02 + Math.sin(t * 0.17 + 1.4) * 0.12;
+    camera.position.z = base;
+    camera.lookAt(0, -0.04, 0);
+
+    renderer.setRenderTarget(rtScene);
+    renderer.clear();
+    renderer.render(scene, camera);
+
+    brightMat.uniforms.tDiffuse.value = rtScene.texture;
+    blit(brightMat, rtA);
+    blurMat.uniforms.tDiffuse.value = rtA.texture;
+    blurMat.uniforms.direction.value.set(1 / rtA.width, 0);
+    blit(blurMat, rtB);
+    blurMat.uniforms.tDiffuse.value = rtB.texture;
+    blurMat.uniforms.direction.value.set(0, 1 / rtA.height);
+    blit(blurMat, rtA);
+
+    compositeMat.uniforms.tDiffuse.value = rtScene.texture;
+    compositeMat.uniforms.tBloom.value = rtA.texture;
+    renderer.setRenderTarget(null);
+    blit(compositeMat, null);
+  }
+
+  let running = false, raf = 0, t = 0;
+  function loop() {
+    if (!running) return;
+    t += DT;
+    step(t); commit(); draw(t);
+    raf = requestAnimationFrame(loop);
+  }
+  function start() { if (running) return; running = true; raf = requestAnimationFrame(loop); }
+  function stop() { running = false; cancelAnimationFrame(raf); }
+
+  // Deterministic capture hook — render one frame at an exact time.
+  window.__seek = (time) => {
+    const target = Math.max(0, time);
+    if (target < t) { t = 0; for (let i = 0; i < N * 3; i++) { cur[i] = rest[i]; prev[i] = rest[i]; } }
+    while (t < target - DT * 0.5) { t += DT; step(t); }
+    commit(); draw(t);
+  };
+
+  for (let s = 0; s < 150; s++) step(s * DT);
+  t = 150 * DT;
+  if (reduce) {
+    commit(); draw(t);
+  } else {
+    start();
+    document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+  }
+})();
+</script>
+</body>
+</html>

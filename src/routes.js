@@ -2,9 +2,12 @@ import { catalogSlug } from "./catalogPresentation.js";
 
 export const STATIC_ROUTE_PATHS = {
   browse: "/browse",
+  designcodeClaim: "/claim/designcode",
   installation: "/installation",
   mcp: "/mcp",
   pricing: "/pricing",
+  purchaseSuccess: "/purchase/success",
+  sponsorship: "/sponsorship",
 };
 
 export const LEGAL_ROUTE_PATHS = {
@@ -78,6 +81,7 @@ export const RENAMED_SHADER_VARIANTS = {
 /* Catalog records can move without making their previously published detail URLs
    disappear. The current category always remains canonical. */
 export const LEGACY_SHADER_CATEGORY_SEGMENTS = {
+  "volta-atelier-hero": "sections",
   "ascii-page-transition-hero": "hero",
   "orrery-hero": "hero",
   "trochil-hero": "hero",
@@ -129,7 +133,7 @@ function staticRoute(page) {
 
 function resolveLegacyRoute(searchParams, catalog) {
   const page = searchParams.get("page");
-  if (page === "browse" || page === "installation" || page === "mcp" || page === "pricing") {
+  if (page === "browse" || page === "installation" || page === "mcp" || page === "pricing" || page === "sponsorship") {
     return staticRoute(page);
   }
 
@@ -156,6 +160,11 @@ export function resolveAppRoute(locationLike, catalog) {
   if (pathname === STATIC_ROUTE_PATHS.installation) return staticRoute("installation");
   if (pathname === STATIC_ROUTE_PATHS.mcp) return staticRoute("mcp");
   if (pathname === STATIC_ROUTE_PATHS.pricing) return staticRoute("pricing");
+  if (pathname === STATIC_ROUTE_PATHS.purchaseSuccess) return staticRoute("purchaseSuccess");
+  if (pathname === STATIC_ROUTE_PATHS.designcodeClaim) {
+    return { page: "designcode-claim", canonicalPath: STATIC_ROUTE_PATHS.designcodeClaim };
+  }
+  if (pathname === STATIC_ROUTE_PATHS.sponsorship) return staticRoute("sponsorship");
   if (pathname === LEGAL_ROUTE_PATHS.privacy) return staticRoute("privacy");
   if (pathname === LEGAL_ROUTE_PATHS.terms) return staticRoute("terms");
   if (pathname === AFFILIATES_ROUTE_PATH) return { page: "affiliates", canonicalPath: AFFILIATES_ROUTE_PATH };

@@ -1,3 +1,5 @@
+export type TopDockAxis = "x" | "y";
+
 export type TopDockOptions = {
   proximity: number;
   spring: number;
@@ -5,6 +7,19 @@ export type TopDockOptions = {
   widthGrowth: number;
   heightGrowth: number;
   drop: number;
+  /* "y" measures the proximity field down a vertical rail: items grow taller and
+     lean out sideways instead of widening and dropping */
+  axis?: TopDockAxis;
+  /* the items own the whole track, so their widths are renormalised against it:
+     opening one cell takes room from its neighbours and the strip stays exactly
+     as wide as its container */
+  distribute?: boolean;
+  /* the opposite deal: the track is pinned to the width it has at rest and the
+     magnified row is allowed to overflow it. A bar that hugs its own content
+     needs this — without it the growing row widens the bar, which both slides
+     the brand and the actions around and resizes the box this controller
+     re-measures from, cancelling the spring on the next frame. */
+  lockTrack?: boolean;
 };
 
 type DockItemState = {
@@ -42,6 +57,9 @@ export function createTopDockController(
 
   const measure = () => {
     enabled = canAnimate();
+    /* released first, so the rest width is measured against the track's own
+       content rather than against the width the last measurement pinned */
+    if (getOptions().lockTrack) root.style.width = "";
     for (const state of items) {
       state.element.style.width = "";
       state.element.style.height = "";
@@ -58,17 +76,24 @@ export function createTopDockController(
     }
     pointerActive = false;
     dirty = false;
+    /* a distributed strip has to fill its track even when the spring never runs
+       — reduced motion, a coarse pointer, or a narrow viewport */
+    if (getOptions().distribute) applyLayout();
+    if (getOptions().lockTrack) root.style.width = `${root.getBoundingClientRect().width.toFixed(2)}px`;
     root.dataset.dockState = enabled ? "idle" : "static";
     root.dataset.dockMax = "0.00";
   };
 
-  const setTargets = (clientX: number) => {
+  const setTargets = (clientX: number, clientY: number) => {
     if (!enabled) return;
     const options = getOptions();
+    const vertical = options.axis === "y";
+    const pointer = vertical ? clientY : clientX;
     const rects = items.map((state) => state.element.getBoundingClientRect());
     for (let index = 0; index < items.length; index += 1) {
-      const center = rects[index].left + rects[index].width * 0.5;
-      const proximity = clamp(1 - Math.abs(clientX - center) / Math.max(1, options.proximity), 0, 1);
+      const rect = rects[index];
+      const center = vertical ? rect.top + rect.height * 0.5 : rect.left + rect.width * 0.5;
+      const proximity = clamp(1 - Math.abs(pointer - center) / Math.max(1, options.proximity), 0, 1);
       const influence = proximity * proximity * (3 - 2 * proximity);
       items[index].target = influence;
       items[index].element.dataset.dockNear = influence > 0.08 ? "true" : "false";
@@ -100,6 +125,41 @@ export function createTopDockController(
     });
   };
 
+  /* the only place item geometry is written, so the three fits stay one
+     behaviour with three ways of spending the same spring value */
+  const applyLayout = () => {
+    const options = getOptions();
+    if (options.distribute && options.axis !== "y") {
+      const weights = items.map((state) => state.baseWidth + options.widthGrowth * clamp(state.value, 0, 1.08));
+      const total = weights.reduce((sum, weight) => sum + weight, 0);
+      const natural = items.reduce((sum, state) => sum + state.baseWidth, 0);
+      /* squeezed below its own natural width the strip would clip every label,
+         so it stops filling the track rather than crushing the cells */
+      const track = root.clientWidth >= natural ? root.clientWidth : 0;
+      items.forEach((state, index) => {
+        state.element.style.width = track ? `${(track * weights[index] / total).toFixed(2)}px` : "";
+        state.element.style.height = "";
+        state.element.style.transform = "";
+      });
+      return;
+    }
+    for (const state of items) {
+      const value = clamp(state.value, 0, 1.08);
+      if (options.axis === "y") {
+        state.element.style.width = "";
+        state.element.style.height = `${(state.baseHeight + options.heightGrowth * value).toFixed(2)}px`;
+        state.element.style.transform = `translateX(${(value * options.drop).toFixed(2)}px)`;
+        continue;
+      }
+      const isLogo = state.element.classList.contains("animated-top-dock__logo");
+      const extraWidth = isLogo ? options.widthGrowth * (14 / 17) : Math.min(options.widthGrowth, state.baseWidth * 0.24);
+      const extraHeight = isLogo ? options.heightGrowth * (14 / 16) : options.heightGrowth;
+      state.element.style.width = `${(state.baseWidth + extraWidth * value).toFixed(2)}px`;
+      state.element.style.height = `${(state.baseHeight + extraHeight * value).toFixed(2)}px`;
+      state.element.style.transform = `translateY(${(value * options.drop).toFixed(2)}px)`;
+    }
+  };
+
   const draw = () => {
     if (enabled && dirty) {
       const options = getOptions();
@@ -115,16 +175,9 @@ export function createTopDockController(
         } else {
           moving = true;
         }
-
-        const value = clamp(state.value, 0, 1.08);
-        const isLogo = state.element.classList.contains("animated-top-dock__logo");
-        const extraWidth = isLogo ? options.widthGrowth * (14 / 17) : Math.min(options.widthGrowth, state.baseWidth * 0.24);
-        const extraHeight = isLogo ? options.heightGrowth * (14 / 16) : options.heightGrowth;
-        state.element.style.width = `${(state.baseWidth + extraWidth * value).toFixed(2)}px`;
-        state.element.style.height = `${(state.baseHeight + extraHeight * value).toFixed(2)}px`;
-        state.element.style.transform = `translateY(${(value * options.drop).toFixed(2)}px)`;
-        maxValue = Math.max(maxValue, value);
+        maxValue = Math.max(maxValue, clamp(state.value, 0, 1.08));
       }
+      applyLayout();
       root.dataset.dockMax = maxValue.toFixed(2);
       if (!moving) {
         dirty = false;
@@ -134,7 +187,7 @@ export function createTopDockController(
     frame = requestAnimationFrame(draw);
   };
 
-  const onPointerMove = (event: PointerEvent) => setTargets(event.clientX);
+  const onPointerMove = (event: PointerEvent) => setTargets(event.clientX, event.clientY);
   const onWindowPointerMove = (event: PointerEvent) => {
     if (!pointerActive) return;
     const rootRect = root.getBoundingClientRect();
@@ -159,8 +212,20 @@ export function createTopDockController(
   };
   const onClick = () => reset();
 
+  /* the spring writes an explicit pixel width onto every item, so the base
+     measurement has to happen after the label font is available — measured
+     against a fallback face, a variant with auto-width items locks in a box its
+     own text then overflows */
+  let released = false;
+  const remeasure = () => { if (!released) measure(); };
+  document.fonts?.ready.then(remeasure);
+
+  /* re-measuring on the parent works for a dock inside a fixed bar, but a rail
+     whose height follows its own items would resize its parent as it grows and
+     cancel the spring on the next frame. A shell can opt out of that feedback
+     loop by marking a box the dock cannot resize. */
   const resizeObserver = new ResizeObserver(measure);
-  resizeObserver.observe(root.parentElement ?? root);
+  resizeObserver.observe(root.closest<HTMLElement>("[data-dock-frame]") ?? root.parentElement ?? root);
   root.addEventListener("pointermove", onPointerMove);
   root.addEventListener("pointerleave", reset);
   root.addEventListener("focusin", onFocusIn);
@@ -174,6 +239,8 @@ export function createTopDockController(
   frame = requestAnimationFrame(draw);
 
   return () => {
+    released = true;
+    root.style.width = "";
     cancelAnimationFrame(frame);
     resizeObserver.disconnect();
     root.removeEventListener("pointermove", onPointerMove);
