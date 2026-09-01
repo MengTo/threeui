@@ -15,6 +15,18 @@ const exports = [
   ...[...catalog.matchAll(eagerPattern)].map((match) => ({ path: match[2].replace("../", "./"), name: match[1] })),
 ];
 
+const compatibilityExports = [
+  { name: "SkeuomorphicToggle", path: "./shaders/neuform-isolated/NeuformBatchEffects" },
+];
+
+for (const compatibilityExport of compatibilityExports) {
+  const current = exports.find((item) => item.name === compatibilityExport.name);
+  if (current && current.path !== compatibilityExport.path) {
+    throw new Error(`Compatibility export ${compatibilityExport.name} moved from ${compatibilityExport.path} to ${current.path}.`);
+  }
+  if (!current) exports.push(compatibilityExport);
+}
+
 if (!exports.length) throw new Error("No Community renderer exports were found in src/data/shaders.tsx");
 
 const names = new Set();

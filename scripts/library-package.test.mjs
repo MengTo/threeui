@@ -9,6 +9,8 @@ const packageJson = JSON.parse(await readFile(resolve(root, "package.json"), "ut
 const cliPackageJson = JSON.parse(await readFile(resolve(root, "packages/cli/package.json"), "utf8"));
 const catalog = await readFile(resolve(root, "src/data/shaders.tsx"), "utf8");
 const generator = await readFile(resolve(root, "scripts/generate-library-entry.mjs"), "utf8");
+const libraryEntry = await readFile(resolve(root, "src/index.ts"), "utf8");
+const legacyToggleEntry = await readFile(resolve(root, "src/package-components/SkeuomorphicToggle.ts"), "utf8");
 
 test("the npm package is public and exports ESM, types, CSS, and assets", () => {
   assert.equal(packageJson.name, "@designcodeio/threeui");
@@ -32,4 +34,12 @@ test("the generated library surface is derived only from the Community catalog i
   assert.match(generator, /Community renderer exports/);
   assert.doesNotMatch(catalog, /\bProRenderer\b|access:\s*["']pro["']/i);
   assert.match(catalog, /CommunityRenderer1/);
+});
+
+test("the expanded toggle collection preserves the published toggle imports", () => {
+  assert.match(generator, /compatibilityExports/);
+  assert.match(generator, /name: "SkeuomorphicToggle"/);
+  assert.match(libraryEntry, /export \{ SkeuomorphicToggle \} from "\.\/package-components\/SkeuomorphicToggle"/);
+  assert.match(libraryEntry, /export \{ SkeuomorphicToggleCollection \} from "\.\/package-components\/SkeuomorphicToggleCollection"/);
+  assert.match(legacyToggleEntry, /export \{ SkeuomorphicToggle \} from "\.\.\/shaders\/neuform-isolated\/NeuformBatchEffects"/);
 });

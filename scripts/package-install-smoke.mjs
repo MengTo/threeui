@@ -41,7 +41,11 @@ try {
   );
   execFileSync(
     process.execPath,
-    ["--input-type=module", "--eval", "const root = await import('@designcodeio/threeui'); const subpath = await import('@designcodeio/threeui/components/CloudField'); if (Object.keys(root).length < 1 || typeof subpath.CloudField !== 'function') process.exit(1);"],
+    [
+      "--input-type=module",
+      "--eval",
+      "const root = await import('@designcodeio/threeui'); const cloud = await import('@designcodeio/threeui/components/CloudField'); const legacyToggle = await import('@designcodeio/threeui/components/SkeuomorphicToggle'); const toggleCollection = await import('@designcodeio/threeui/components/SkeuomorphicToggleCollection'); if (typeof root.SkeuomorphicToggle !== 'function' || typeof root.SkeuomorphicToggleCollection !== 'function' || typeof cloud.CloudField !== 'function' || typeof legacyToggle.SkeuomorphicToggle !== 'function' || typeof toggleCollection.SkeuomorphicToggleCollection !== 'function') process.exit(1);",
+    ],
     { cwd: consumerDirectory, stdio: "inherit", env: environment },
   );
   console.log(`Anonymous install smoke test passed for ${packResult[0].filename}.`);
