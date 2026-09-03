@@ -8,7 +8,8 @@ export type ShaderButtonVariant =
   | "induction-button"
   | "plasma-button"
   | "tactile-button"
-  | "thinking-button";
+  | "thinking-button"
+  | "raking-light-pill";
 
 /** @deprecated Variant names that shipped before a rename. Use {@link ShaderButtonVariant}. */
 export type LegacyShaderButtonVariant = "uploading-button";
@@ -39,6 +40,9 @@ const SHADER_BUTTON_VARIANTS = {
   ),
   "thinking-button": lazy(() =>
     import("../neuform-isolated/NeuformIsolatedEffects").then((module) => ({ default: module.ThinkingButton })),
+  ),
+  "raking-light-pill": lazy(() =>
+    import("./RakingLightPillButton").then((module) => ({ default: module.RakingLightPillButton })),
   ),
 } satisfies Record<ShaderButtonVariant, LazyExoticComponent<ComponentType<NeuformIsolatedEffectProps>>>;
 
