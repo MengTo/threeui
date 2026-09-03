@@ -1,5 +1,8 @@
 // Updated by scripts/sync-community-from-main.mjs.
 export const COMMUNITY_NEWEST_SHADER_IDS = [
+  "orb-gallery",
+  "3d-paper",
+  "ashen-press",
   "meng-to-sketchbook-landing-page",
   "koi-studies",
   "sylva-hero",

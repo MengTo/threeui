@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-31T16:05:46.996Z",
-  "sourceCommit": "6b65f2dbec22ac58c56474f028aec5590e62d3c9",
-  "communityParents": 43,
-  "communityRoutes": 104,
-  "communityVariants": 163,
-  "excludedProParents": 108,
+  "generatedAt": "2026-09-03T05:35:30.118Z",
+  "sourceCommit": "65f7995b00f0f64323b217b353a529de99ec7fac",
+  "communityParents": 46,
+  "communityRoutes": 107,
+  "communityVariants": 166,
+  "excludedProParents": 109,
   "excludedBetaParents": 23,
   "layoutStylesSha256": "cee8ebe47ad857149f52f12bb12324a83856fc403ea1431f238aec4ecc385760",
   "rendererStylesSha256": "dc36aeb914df4c554164304292d75738a770e454b1e2710bac1ce4169d5fee2a",
@@ -395,7 +395,8 @@
         "induction-button",
         "plasma-button",
         "tactile-button",
-        "thinking-button"
+        "thinking-button",
+        "raking-light-pill"
       ],
       "controlKeys": [
         "mode",
@@ -409,7 +410,8 @@
         "induction-button": [],
         "plasma-button": [],
         "tactile-button": [],
-        "thinking-button": []
+        "thinking-button": [],
+        "raking-light-pill": []
       }
     },
     {
@@ -436,7 +438,9 @@
         "meridian-keycap-secondary",
         "halvorsen-arrow-pill",
         "aster-glass-access",
-        "aster-glass-arrow"
+        "aster-glass-arrow",
+        "ember-keycap",
+        "bloom-outline-button"
       ],
       "controlKeys": [
         "mode",
@@ -521,6 +525,18 @@
           "hue",
           "saturation",
           "brightness"
+        ],
+        "ember-keycap": [
+          "mode",
+          "hue",
+          "saturation",
+          "brightness"
+        ],
+        "bloom-outline-button": [
+          "mode",
+          "hue",
+          "saturation",
+          "brightness"
         ]
       }
     },
@@ -592,6 +608,24 @@
         "saturation",
         "brightness"
       ],
+      "variantControlKeys": {}
+    },
+    {
+      "id": "orb-gallery",
+      "variantIds": [],
+      "controlKeys": [],
+      "variantControlKeys": {}
+    },
+    {
+      "id": "3d-paper",
+      "variantIds": [],
+      "controlKeys": [],
+      "variantControlKeys": {}
+    },
+    {
+      "id": "ashen-press",
+      "variantIds": [],
+      "controlKeys": [],
       "variantControlKeys": {}
     },
     {

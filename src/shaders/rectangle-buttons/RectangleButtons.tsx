@@ -29,7 +29,9 @@ export type RectangleButtonVariant =
   | "meridian-keycap-secondary"
   | "halvorsen-arrow-pill"
   | "aster-glass-access"
-  | "aster-glass-arrow";
+  | "aster-glass-arrow"
+  | "ember-keycap"
+  | "bloom-outline-button";
 
 type SelectedPageButtonVariant = Extract<
   RectangleButtonVariant,
@@ -42,6 +44,8 @@ type SelectedPageButtonVariant = Extract<
   | "halvorsen-arrow-pill"
   | "aster-glass-access"
   | "aster-glass-arrow"
+  | "ember-keycap"
+  | "bloom-outline-button"
 >;
 
 type IsolatedRectangleVariant = Exclude<
@@ -102,6 +106,8 @@ const SELECTED_PAGE_BUTTON_VARIANTS = new Set<RectangleButtonVariant>([
   "halvorsen-arrow-pill",
   "aster-glass-access",
   "aster-glass-arrow",
+  "ember-keycap",
+  "bloom-outline-button",
 ]);
 
 function isSelectedPageButtonVariant(variant: RectangleButtonVariant): variant is SelectedPageButtonVariant {
@@ -416,6 +422,191 @@ const SELECTED_PAGE_BUTTON_STYLES = `
   transition: transform .5s cubic-bezier(.22, 1, .36, 1);
 }
 .threeui-page-button--aster-arrow:hover svg { transform: translateX(2px); }
+.threeui-page-button-stage--ember-keycap {
+  background: #080604;
+  font-family: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+}
+.threeui-page-button-stage--ember-keycap::before {
+  background:
+    radial-gradient(ellipse at 50% 56%, rgba(255, 111, 35, .20), transparent 30%),
+    linear-gradient(180deg, rgba(255, 119, 45, .035), transparent 58%);
+}
+.threeui-page-button-ember-wrap {
+  position: relative;
+  display: inline-block;
+}
+.threeui-page-button-ember-glow,
+.threeui-page-button-ember-bloom {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  mix-blend-mode: plus-lighter;
+  transition: opacity .16s ease, transform .16s ease;
+}
+.threeui-page-button-ember-glow {
+  left: 6%;
+  right: 6%;
+  top: -9px;
+  height: 16px;
+  background: radial-gradient(closest-side, rgba(255, 222, 182, .95), rgba(255, 138, 54, .62) 50%, rgba(255, 96, 24, 0) 100%);
+  filter: blur(4px);
+  opacity: 1;
+}
+.threeui-page-button-ember-bloom {
+  left: -10%;
+  right: -10%;
+  top: -31px;
+  height: 58px;
+  background: radial-gradient(closest-side, rgba(255, 128, 50, .55), rgba(255, 92, 24, .18) 58%, rgba(255, 72, 14, 0) 100%);
+  filter: blur(12px);
+  opacity: .85;
+}
+.threeui-page-button--ember-keycap {
+  gap: .85em;
+  padding: 1.05em 1.6em 1.1em;
+  border-radius: 9px;
+  background: linear-gradient(178deg, #4a4d54 0%, #34373d 18%, #23262b 62%, #1a1c20 100%);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 238, 225, .22),
+    inset 0 -1px 0 rgba(0, 0, 0, .75),
+    0 7px 0 -1px #101215,
+    0 12px 26px rgba(0, 0, 0, .62);
+  color: #fff1e2;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  transform: translateY(0);
+  transition: transform .13s cubic-bezier(.3, .7, .3, 1), box-shadow .13s ease;
+}
+.threeui-page-button--ember-keycap .threeui-page-button__spark {
+  width: 1.1em;
+  height: 1.1em;
+  flex: none;
+  fill: #ff8a3d;
+  filter: drop-shadow(0 0 .55em rgba(255, 120, 50, .9));
+}
+.threeui-page-button--ember-keycap .threeui-page-button__price { color: #b9ada3; }
+.threeui-page-button-ember-wrap:hover .threeui-page-button--ember-keycap,
+.threeui-page-button--ember-keycap:focus-visible {
+  transform: translateY(5px);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 238, 225, .26),
+    inset 0 -1px 0 rgba(0, 0, 0, .75),
+    0 2px 0 -1px #101215,
+    0 5px 14px rgba(0, 0, 0, .6);
+}
+.threeui-page-button--ember-keycap:focus-visible {
+  outline-color: #ff9a59;
+}
+.threeui-page-button-ember-wrap:hover .threeui-page-button-ember-glow,
+.threeui-page-button-ember-wrap:focus-within .threeui-page-button-ember-glow {
+  transform: translateY(5px) scaleX(1.05);
+}
+.threeui-page-button-ember-wrap:hover .threeui-page-button-ember-bloom,
+.threeui-page-button-ember-wrap:focus-within .threeui-page-button-ember-bloom {
+  opacity: 1;
+  transform: translateY(5px) scale(1.05);
+}
+.threeui-page-button--ember-keycap:active { transform: translateY(6px); }
+.threeui-page-button-stage--bloom-outline {
+  --threeui-bloom-outline-edge: #f5ece6;
+  --threeui-bloom-outline-fill: #f5ece6;
+  --threeui-bloom-outline-fg: #3f2c33;
+  --threeui-page-ink: #f5ece6;
+  background: #b5808e;
+  font-family: "General Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+.threeui-page-button-stage--bloom-outline::before {
+  background:
+    radial-gradient(ellipse at 29% 24%, rgba(245, 236, 230, .2), transparent 34%),
+    radial-gradient(ellipse at 75% 72%, rgba(63, 44, 51, .15), transparent 36%),
+    repeating-radial-gradient(circle at 44% 48%, rgba(245, 236, 230, .1) 0 1px, transparent 1px 4px);
+  opacity: .7;
+  mix-blend-mode: soft-light;
+}
+.threeui-page-button--bloom-outline {
+  --bloom-outline-x: 50%;
+  --bloom-outline-y: 50%;
+  --bloom-outline-diameter: 220px;
+  gap: 13.6px;
+  overflow: hidden;
+  padding: 14.4px 23.2px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--threeui-bloom-outline-edge);
+  font-size: 14.72px;
+  font-weight: 400;
+  letter-spacing: .045em;
+  line-height: 1;
+  text-transform: uppercase;
+  will-change: transform;
+  transition:
+    color .38s cubic-bezier(.22, .61, .36, 1),
+    border-color .38s cubic-bezier(.22, .61, .36, 1),
+    transform .55s cubic-bezier(.19, 1, .22, 1);
+}
+.threeui-page-button--bloom-outline::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: var(--bloom-outline-x);
+  top: var(--bloom-outline-y);
+  width: var(--bloom-outline-diameter);
+  height: var(--bloom-outline-diameter);
+  border-radius: 50%;
+  background: var(--threeui-bloom-outline-fill);
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform .58s cubic-bezier(.19, 1, .22, 1);
+}
+.threeui-page-button--bloom-outline > * {
+  position: relative;
+  z-index: 1;
+}
+.threeui-page-button--bloom-outline:hover,
+.threeui-page-button--bloom-outline:focus-visible {
+  border-color: var(--threeui-bloom-outline-fg);
+  color: var(--threeui-bloom-outline-fg);
+}
+.threeui-page-button--bloom-outline:hover::before,
+.threeui-page-button--bloom-outline:focus-visible::before { transform: translate(-50%, -50%) scale(1); }
+.threeui-page-button--bloom-outline .threeui-page-button__bloom-label {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: middle;
+}
+.threeui-page-button--bloom-outline .threeui-page-button__bloom-label > span {
+  display: block;
+  transition: transform .5s cubic-bezier(.19, 1, .22, 1);
+}
+.threeui-page-button--bloom-outline .threeui-page-button__bloom-label > span + span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translateY(115%);
+}
+.threeui-page-button--bloom-outline:hover .threeui-page-button__bloom-label > span:first-child,
+.threeui-page-button--bloom-outline:focus-visible .threeui-page-button__bloom-label > span:first-child { transform: translateY(-115%); }
+.threeui-page-button--bloom-outline:hover .threeui-page-button__bloom-label > span + span,
+.threeui-page-button--bloom-outline:focus-visible .threeui-page-button__bloom-label > span + span { transform: translateY(0); }
+.threeui-page-button__bloom-dot {
+  width: 4.8px;
+  height: 4.8px;
+  flex: none;
+  border-radius: 50%;
+  background: currentColor;
+  transition: transform .55s cubic-bezier(.19, 1, .22, 1), opacity .4s;
+}
+.threeui-page-button--bloom-outline:hover .threeui-page-button__bloom-dot:first-child,
+.threeui-page-button--bloom-outline:focus-visible .threeui-page-button__bloom-dot:first-child {
+  opacity: .5;
+  transform: translateX(5.44px) scale(.6);
+}
+.threeui-page-button--bloom-outline:hover .threeui-page-button__bloom-dot:last-child,
+.threeui-page-button--bloom-outline:focus-visible .threeui-page-button__bloom-dot:last-child {
+  transform: translateX(-5.44px) scale(1.7);
+}
 
 /* ---------------------------------------------------------------- *
    The other ground
@@ -575,8 +766,34 @@ const SELECTED_PAGE_BUTTON_STYLES = `
 .threeui-page-button-stage--aster[data-mode="light"] .threeui-page-button--aster-arrow .threeui-page-button__chip::before {
   background: linear-gradient(150deg, rgba(16, 16, 16, .5), rgba(16, 16, 16, .1) 62%, rgba(16, 16, 16, .3));
 }
+.threeui-page-button-stage--ember-keycap[data-mode="light"] {
+  background: #f2ece6;
+  --threeui-page-ink: #1a1511;
+}
+.threeui-page-button-stage--ember-keycap[data-mode="light"]::before {
+  background: radial-gradient(ellipse at 50% 56%, rgba(221, 84, 12, .20), transparent 30%);
+}
+.threeui-page-button-stage--ember-keycap[data-mode="light"] .threeui-page-button-ember-bloom {
+  opacity: .66;
+}
+.threeui-page-button-stage--bloom-outline[data-mode="light"] {
+  --threeui-bloom-outline-edge: #3f2c33;
+  --threeui-bloom-outline-fill: #3f2c33;
+  --threeui-bloom-outline-fg: #f5ece6;
+  --threeui-page-ink: #3f2c33;
+  background: #f5ece6;
+}
+.threeui-page-button-stage--bloom-outline[data-mode="light"]::before {
+  background:
+    radial-gradient(ellipse at 29% 24%, rgba(181, 128, 142, .2), transparent 34%),
+    radial-gradient(ellipse at 75% 72%, rgba(63, 44, 51, .08), transparent 36%),
+    repeating-radial-gradient(circle at 44% 48%, rgba(138, 95, 108, .08) 0 1px, transparent 1px 4px);
+  mix-blend-mode: multiply;
+}
 @media (prefers-reduced-motion: reduce) {
-  .threeui-page-button, .threeui-page-button::before, .threeui-page-button svg { transition-duration: .01ms !important; }
+  .threeui-page-button, .threeui-page-button::before, .threeui-page-button svg,
+  .threeui-page-button-ember-glow, .threeui-page-button-ember-bloom { transition-duration: .01ms !important; }
+  .threeui-page-button--bloom-outline { transform: none !important; }
 }
 `;
 
@@ -631,6 +848,51 @@ function SelectedPageButton({ variant, mode = "dark", className = "", style }: S
     case "aster-glass-arrow":
       theme = "aster";
       button = <button className="threeui-page-button threeui-page-button--aster threeui-page-button--aster-arrow" type="button"><span>Start free</span><span className="threeui-page-button__chip"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6h8M6.6 2.6 10 6 6.6 9.4" /></svg></span></button>;
+      break;
+    case "ember-keycap":
+      theme = "ember-keycap";
+      button = (
+        <span className="threeui-page-button-ember-wrap">
+          <button className="threeui-page-button threeui-page-button--ember-keycap" type="button">
+            <svg className="threeui-page-button__spark" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 4 L61 39 L96 50 L61 61 L50 96 L39 61 L4 50 L39 39 Z" /></svg>
+            <span>Pre-order</span>
+            <span className="threeui-page-button__price">$249</span>
+          </button>
+          <span className="threeui-page-button-ember-glow" aria-hidden="true" />
+          <span className="threeui-page-button-ember-bloom" aria-hidden="true" />
+        </span>
+      );
+      break;
+    case "bloom-outline-button":
+      theme = "bloom-outline";
+      button = (
+        <button
+          className="threeui-page-button threeui-page-button--bloom-outline"
+          type="button"
+          onPointerMove={(event) => {
+            const rect = event.currentTarget.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const diameter = 2 * Math.hypot(Math.max(x, rect.width - x), Math.max(y, rect.height - y));
+            event.currentTarget.style.setProperty("--bloom-outline-x", `${x.toFixed(1)}px`);
+            event.currentTarget.style.setProperty("--bloom-outline-y", `${y.toFixed(1)}px`);
+            event.currentTarget.style.setProperty("--bloom-outline-diameter", `${diameter.toFixed(1)}px`);
+            if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+              const dx = (x - rect.width / 2) / rect.width;
+              const dy = (y - rect.height / 2) / rect.height;
+              event.currentTarget.style.transform = `translate3d(${(dx * 14).toFixed(1)}px, ${(dy * 9).toFixed(1)}px, 0)`;
+            }
+          }}
+          onPointerLeave={(event) => { event.currentTarget.style.transform = ""; }}
+        >
+          <span className="threeui-page-button__bloom-dot" aria-hidden="true" />
+          <span className="threeui-page-button__bloom-label">
+            <span>See the season</span>
+            <span aria-hidden="true">See the season</span>
+          </span>
+          <span className="threeui-page-button__bloom-dot" aria-hidden="true" />
+        </button>
+      );
       break;
   }
 
