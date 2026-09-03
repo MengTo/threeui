@@ -38,6 +38,10 @@ npm install
 npm run dev
 ```
 
+Or deploy it hosted, without cloning anything:
+
+[![Deploy on InstaPods](https://instapods.com/deploy-button.svg)](https://app.instapods.com/dashboard/pods/create?repo=https://github.com/MengTo/threeui&ref=gh-threeui)
+
 Run the complete publication boundary, type, and production-build checks:
 
 ```bash
