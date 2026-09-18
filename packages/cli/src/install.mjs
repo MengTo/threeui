@@ -83,5 +83,5 @@ export async function installBundle(bundle, { directory = process.cwd(), force =
     await mkdir(dirname(target.destination), { recursive: true });
     await writeFile(target.destination, target.bytes);
   }
-  return targets.map((target) => relative(root, target.destination));
+  return targets.map((target) => relative(root, target.destination).split(sep).join("/"));
 }
