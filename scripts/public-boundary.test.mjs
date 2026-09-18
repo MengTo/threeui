@@ -12,6 +12,10 @@ const sourceRegistry = JSON.parse(await readFile(join(root, "public", "source-co
 const styles = await readFile(join(root, "src", "styles.css"));
 const rendererStyles = await readFile(join(root, "src", "shaders", "community.css"));
 
+function snapshotHash(value) {
+  return createHash("sha256").update(value.toString("utf8").replace(/\r\n/g, "\n")).digest("hex");
+}
+
 const vite = await createServer({ root, server: { middlewareMode: true }, appType: "custom", logLevel: "silent" });
 let catalog;
 try {
@@ -104,11 +108,11 @@ test("all Community parents include their implementation source", () => {
 });
 
 test("the main layout stylesheet remains byte-identical to the synchronized snapshot", () => {
-  assert.equal(createHash("sha256").update(styles).digest("hex"), report.layoutStylesSha256);
+  assert.equal(snapshotHash(styles), report.layoutStylesSha256);
 });
 
 test("the main Community renderer styles are present without Pro or Beta selectors", async () => {
-  assert.equal(createHash("sha256").update(rendererStyles).digest("hex"), report.rendererStylesSha256);
+  assert.equal(snapshotHash(rendererStyles), report.rendererStylesSha256);
   const css = rendererStyles.toString("utf8");
   for (const selector of [
     ".threeui-background",

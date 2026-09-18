@@ -5,6 +5,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const npmCommand = process.platform === "win32" ? process.env.ComSpec ?? "cmd.exe" : "npm";
+const npmPrefix = process.platform === "win32" ? ["/d", "/s", "/c", "npm.cmd"] : [];
 const temporaryRoot = await mkdtemp(join(tmpdir(), "threeui-package-smoke-"));
 const packDirectory = join(temporaryRoot, "pack");
 const consumerDirectory = join(temporaryRoot, "consumer");
@@ -28,15 +30,15 @@ try {
     writeFile(emptyGlobalConfig, ""),
   ]);
   const packResult = JSON.parse(execFileSync(
-    "npm",
-    ["pack", "--ignore-scripts", "--json", "--pack-destination", packDirectory],
+    npmCommand,
+    [...npmPrefix, "pack", "--ignore-scripts", "--json", "--pack-destination", packDirectory],
     { cwd: root, encoding: "utf8", env: environment },
   ));
   const tarball = join(packDirectory, packResult[0].filename);
   await writeFile(join(consumerDirectory, "package.json"), `${JSON.stringify({ private: true, type: "module" }, null, 2)}\n`);
   execFileSync(
-    "npm",
-    ["install", "--ignore-scripts", tarball, "react@19", "react-dom@19", "three@0.149.0"],
+    npmCommand,
+    [...npmPrefix, "install", "--ignore-scripts", tarball, "react@19", "react-dom@19", "three@0.149.0"],
     { cwd: consumerDirectory, stdio: "inherit", env: environment },
   );
   execFileSync(

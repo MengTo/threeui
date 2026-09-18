@@ -69,7 +69,7 @@ For the smallest development import graph, use a component subpath:
 import { AtTheHorizon } from "@designcodeio/threeui/components/AtTheHorizon";
 ```
 
-Components that render full HTML documents expect their runtime files at the same root-relative URLs used by the ThreeUI preview. Copy the needed files from `node_modules/@designcodeio/threeui/lib-dist/assets/` into your app's public directory, or override the component's `sourceUrl` or `assetBaseUrl` prop where available.
+Components that render full HTML documents expect their runtime files at the same root-relative URLs used by the ThreeUI preview. Copy the needed files from `node_modules/@designcodeio/threeui/lib-dist/assets/` into your app's public directory, or override the component's `sourceUrl` or `assetBaseUrl` prop where available. `SylvaLivingWorldScene` inlines its Lexend font so its sandboxed scene does not require a cross-origin font request; pass `assetBaseUrl` when serving additional relative assets from a different location.
 
 ## Pro source access
 
