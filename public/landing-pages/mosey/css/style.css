@@ -1,0 +1,666 @@
+@font-face {
+  font-family: "Archivo Black";
+  src: url("../fonts/ArchivoBlack-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+:root {
+  --ground: #f6f1ea;
+  --paper: #fbf8f3;
+  --ink: #15151a;
+  --blue: #1f3fe0;
+  --yellow: #f6c21a;
+  --display: "Archivo Black", "Arial Black", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --pad: clamp(16px, 2.2vw, 34px);
+  --spring: cubic-bezier(0.3, 1.5, 0.5, 1);
+  --out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+* { box-sizing: border-box; margin: 0; }
+html { background: var(--ground); }
+/* the browser's own scrollbar in the page's two colours: a blue thumb on yellow while the page is light,
+   a yellow thumb on blue once it is dark or blue (night, the film, its lens, the blue sky at the end), so it always stands out */
+html { scrollbar-color: var(--blue) var(--yellow); }
+html:has(body:is(.night, .proj, .sky-blue, .at-end)), html:has(#hud.is-on) { scrollbar-color: var(--yellow) var(--blue); }
+body { scrollbar-color: auto; }      /* the colour is for the page's own scrollbar. It is handed down to every element unless it stops here, and then each change of chapter made the browser restyle and repaint the whole page */
+@supports not (scrollbar-color: auto) {      /* older Safari */
+  ::-webkit-scrollbar { width: 12px; } ::-webkit-scrollbar-track { background: var(--yellow); }
+  ::-webkit-scrollbar-thumb { background: var(--blue); border-radius: 6px; border: 2px solid var(--yellow); }
+}
+body {
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 13px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+::selection { background: var(--blue); color: #fff; }
+a { color: inherit; }
+ul { list-style: none; padding: 0; }
+
+#world { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; display: block; touch-action: pan-y; }
+body.grabbing, body.grabbing * { cursor: grabbing !important; }
+body.can-grab { cursor: grab; }
+
+/* a little paper tooth and a soft vignette over the render */
+.grain {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(60, 40, 10, 0.16) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .1  0 0 0 0 .08  0 0 0 0 .05  0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply; opacity: 0.36;
+}
+
+/* ---------- fixed chrome ---------- */
+.bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 6;
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  padding: var(--pad); pointer-events: none;
+}
+.bar > * { pointer-events: auto; }
+/* No plates up here: a seal and one button. A soft band behind the bar keeps them readable and takes the scene's colour,
+   the same trick as the plate under the track (one flat colour faded by a mask, so the colour can cross-fade). */
+/* The two nav colours live on the bar and the track, the only places that use them. On body they were handed down to every
+   element of the page, so each change of chapter restyled all of it (a stutter on a slow phone). */
+.bar, .rail { --nav-c: var(--ink); --nav-on: var(--blue); }
+body:is(.night, .proj, .sky-blue, .at-end) :is(.bar, .rail), body:has(#hud.is-on) :is(.bar, .rail) { --nav-c: #fff; --nav-on: var(--yellow); }
+.bar::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 132px; z-index: -1; pointer-events: none; background-color: rgba(246, 241, 234, 0.9); -webkit-mask-image: linear-gradient(to bottom, #000 36%, transparent); mask-image: linear-gradient(to bottom, #000 36%, transparent); transition: opacity 0.5s, background-color 0.9s; }
+body.night .bar::before { background-color: rgba(14, 18, 48, 0.9); }
+body.proj .bar::before { background-color: rgba(30, 30, 36, 0.88); }
+body.sky-blue .bar::before, body.at-end .bar::before { background-color: rgba(22, 44, 170, 0.88); }
+body:has(#hud.is-on) .bar::before { background-color: rgba(7, 7, 11, 0.6); }      /* through its lens the room is dark */
+body.diving .bar::before { opacity: 0; }
+/* a quiet row of links in the middle. They are not there at first: once the box has landed on the headline (body.boxed),
+   each one falls into place the way the box did, with a bounce and a little spin that settles. Scroll back to the top and they go back up. */
+.tabs { position: absolute; left: 50%; top: 50%; translate: -50% -50%; display: flex; gap: 32px; text-transform: uppercase; letter-spacing: 0.14em; font-size: 11px; font-weight: 600; white-space: nowrap; transition: opacity 0.3s; }
+.tabs a { position: relative; padding: 6px 0; text-decoration: none; color: color-mix(in srgb, var(--nav-c) 72%, transparent); opacity: 0; translate: 0 -130px; visibility: hidden; pointer-events: none; transition: color 0.3s, opacity 0.25s, translate 0.45s cubic-bezier(0.5, 0, 0.9, 0.4), visibility 0s 0.45s; }
+.tabs a:nth-child(1) { --i: 0; --r0: -11deg; } .tabs a:nth-child(2) { --i: 1.1; --r0: 8deg; } .tabs a:nth-child(3) { --i: 1.9; --r0: -7deg; } .tabs a:nth-child(4) { --i: 3.2; --r0: 12deg; }
+body.boxed .tabs a { visibility: visible; pointer-events: auto; animation: tabFall 1.05s both; animation-delay: calc(0.3s + var(--i) * 0.11s); transition: color 0.3s; }
+@keyframes tabFall {
+  0% { opacity: 0; translate: 0 -130px; rotate: var(--r0); animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45); }
+  10% { opacity: 1; }
+  50% { translate: 0 0; rotate: calc(var(--r0) * -0.3); animation-timing-function: cubic-bezier(0, 0.55, 0.45, 1); }
+  66% { translate: 0 -12px; rotate: calc(var(--r0) * 0.12); animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45); }
+  81% { translate: 0 0; rotate: 0deg; animation-timing-function: cubic-bezier(0, 0.55, 0.45, 1); }
+  90% { translate: 0 -3px; animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45); }
+  100% { opacity: 1; translate: 0 0; rotate: 0deg; }
+}
+/* hover: the word's letters roll over one after the other (the same move as the key button), and a tiny copy of the track
+   appears under it: a dark rail that fills with yellow, a dot riding the front of the fill. The tab you are in keeps its rail full. */
+.tabs a { padding: 6px 0 11px; }
+.tab__roll { display: inline-flex; overflow: hidden; height: 1.5em; line-height: 1.5; vertical-align: top; }
+.tab__ch { position: relative; display: inline-block; white-space: pre; transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1) calc(var(--i) * 16ms); }
+.tab__ch::after { content: attr(data-c); position: absolute; left: 0; top: 100%; color: var(--tab-in, var(--nav-c)); }
+.tabs a:is(:hover, .is-hover) .tab__ch { transform: translateY(-100%); }
+.tabs a::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 6px; border-radius: 99px; opacity: 0; scale: 0.6 1; transform-origin: left;
+  background: linear-gradient(180deg, #ffe27a, var(--yellow)) 2px 50% / 0 2px no-repeat, #15151a;      /* a yellow line inside a dark rail, like the track itself, so it reads on cream and on night */ box-shadow: 0 0 0 1.5px rgba(251, 248, 243, 0.85);
+  transition: opacity 0.2s, scale 0.4s var(--spring), background-size 0.5s cubic-bezier(0.3, 0, 0.2, 1) 0.06s; }
+.tabs a::before { content: ""; position: absolute; left: 0; bottom: -1.5px; width: 9px; height: 9px; margin-left: -2px; border-radius: 50%; background: var(--yellow); box-shadow: 0 0 0 2px #15151a; z-index: 1; opacity: 0; scale: 0.3;
+  transition: opacity 0.2s, scale 0.35s var(--spring), left 0.5s cubic-bezier(0.3, 0, 0.2, 1) 0.06s; }
+.tabs a:is(:hover, .is-hover), .tabs a.is-on { color: var(--nav-c); }
+.tabs a.is-on { color: var(--nav-on); --tab-in: var(--nav-on); }
+.tabs a:is(:hover, .is-hover)::after, .tabs a.is-on::after { opacity: 1; scale: 1 1; background-size: calc(100% - 4px) 2px, auto; }
+.tabs a:is(:hover, .is-hover)::before, .tabs a.is-on::before { opacity: 1; scale: 1; left: calc(100% - 5px); }
+.tabs a:active .tab__roll { translate: 0 1px; }
+body.diving .tabs { opacity: 0; }
+/* the logo is a seal: a transparent PNG in two tones (ink for light scenes, paper for dark ones), and its ring turns as you walk */
+.mark { position: relative; display: block; flex: none; width: 82px; height: 82px; margin: -12px 0 -12px -6px; border-radius: 50%; transition: transform 0.45s var(--spring); }
+.mark:hover { transform: scale(1.07) rotate(-4deg); }
+.mark img { position: absolute; inset: 0; width: 100%; height: 100%; transition: opacity 0.5s; }
+.mark img.ring { rotate: var(--turn, 0deg); }
+.mark img.paper { opacity: 0; }
+body:is(.night, .proj, .sky-blue, .at-end) .mark img.ink, body:has(#hud.is-on) .mark img.ink { opacity: 0; }
+body:is(.night, .proj, .sky-blue, .at-end) .mark img.paper, body:has(#hud.is-on) .mark img.paper { opacity: 1; }
+
+/* the key button: a bright cap in a dark bezel, letters that roll over on hover, an arrow chip on the end.
+   js/buttons.js builds the layers inside each .btn. */
+.btn {
+  --bz: 5px; --ch: 34px; --lc: var(--on-accent, var(--ink));
+  position: relative; isolation: isolate; display: inline-flex; align-items: center; gap: 14px;
+  height: 46px; padding: 0 6px 0 20px; margin: var(--bz); border-radius: 999px;
+  color: var(--lc); text-transform: uppercase; letter-spacing: 0.14em; font-size: 11px; font-weight: 600; text-decoration: none; white-space: nowrap;
+}
+button.btn { border: 0; background: none; font: inherit; font-size: 11px; font-weight: 600; cursor: pointer; }
+button.btn.btn-big { font-size: 12.5px; }
+/* the intro (js/hero-fx.js): PRESS waits while the name rains in, then drops in and lands on a spring. And one white flash when the box hits. */
+body.hero-wait .btn-play { opacity: 0; animation: none; pointer-events: none; }
+body.hero-btn .btn.btn-play { animation: playBob 3.2s var(--spring) 2.6s infinite; }      /* the fall and the spring it lands on are worked out in js/hero-fx.js (dropBtn) */
+.hero-flash { position: fixed; inset: 0; z-index: 5; pointer-events: none; background: #fff; opacity: 0; }
+.hero-flash.go { animation: heroFlash 0.45s ease-out; } @keyframes heroFlash { 0% { opacity: 0.6; } 100% { opacity: 0; } }
+/* the play button: the same key in the page's blue, no arrow, with a little life of its own. Yellow is kept for buying. */
+.btn.btn-play { --lc: #fff; --bz: 7px; height: 64px; padding: 0 40px; gap: 0; justify-content: center; font-family: var(--display); letter-spacing: 0.08em; animation: playBob 3.2s var(--spring) 1.5s infinite; }
+button.btn.btn-play { font-family: var(--display); font-size: 20px; font-weight: 400; }
+.btn-play .btn__label { margin-right: -0.08em; }      /* the last letter's spacing would push the word off centre */
+.btn-play .btn__cap { background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 48%, rgba(0, 0, 20, 0.22)), var(--blue);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), inset 0 -3px 0 rgba(0, 0, 30, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.25); }
+.btn-play .btn__bezel::after { content: ""; position: absolute; inset: 0; border-radius: inherit; border: 2px solid var(--blue); opacity: 0; animation: playRing 3.2s ease-out 1.5s infinite; }
+.btn-play:hover { animation-play-state: paused; }
+.btn-play:hover .btn__cap { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 -3px 0 rgba(0, 0, 30, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.4), 0 12px 26px -10px var(--blue); }
+.btn-play:active .btn__cap { translate: 0 4px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 4px 9px rgba(0, 0, 30, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.2); }
+.btn-play:active .btn__label { translate: 0 4px; }
+@keyframes playBob { 0%, 78%, 100% { translate: 0 0; rotate: 0deg; } 84% { translate: 0 -7px; rotate: -2deg; } 90% { translate: 0 0; rotate: 1.5deg; } 95% { translate: 0 -2px; rotate: 0deg; } }
+@keyframes playRing { 0%, 86% { opacity: 0; inset: 0; } 88% { opacity: 0.7; inset: 0; } 100% { opacity: 0; inset: -14px; } }
+@media (prefers-reduced-motion: reduce) { .btn-play, .btn-play .btn__bezel::after { animation: none; } }
+.btn-big { --bz: 6px; --ch: 46px; height: 60px; padding: 0 7px 0 28px; gap: 20px; font-size: 12.5px; }
+.tag .btn-big { display: flex; justify-content: space-between; --ch: 42px; height: 54px; padding: 0 6px 0 22px; gap: 10px; font-size: 12px; margin-top: 18px; }
+.btn__bezel { position: absolute; inset: calc(var(--bz) * -1); border-radius: inherit; z-index: 0; pointer-events: none;
+  background: linear-gradient(180deg, #050506, #26262d);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.9), inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 8px 18px -6px rgba(30, 20, 5, 0.45);
+  transition: inset 0.5s var(--out), box-shadow 0.5s var(--out); }
+.btn__cap { position: absolute; inset: 0; border-radius: inherit; z-index: 0; overflow: hidden; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 46%, rgba(0, 0, 0, 0.12)), var(--yellow);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), inset 0 -2px 0 rgba(0, 0, 0, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  transition: box-shadow 0.4s var(--out), translate 0.25s var(--out); }
+.btn__cap::before { content: ""; position: absolute; inset: 0; background: radial-gradient(120px circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.7), transparent 62%); opacity: 0; transition: opacity 0.45s; }
+.btn__cap::after { content: ""; position: absolute; top: -20%; bottom: -20%; left: -38%; width: 30%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7) 50%, transparent); transform: skewX(-20deg); animation: btnSheen 7s cubic-bezier(0.65, 0, 0.35, 1) 1.6s infinite; }
+@keyframes btnSheen { 0% { translate: 0 0; } 24%, 100% { translate: 480% 0; } }
+.btn__label { position: relative; z-index: 1; display: inline-flex; align-items: center; overflow: hidden; line-height: 1.5; height: 1.5em; transition: translate 0.25s var(--out); }
+.btn__ch { position: relative; display: inline-block; white-space: pre; color: var(--lc); transition: transform 0.36s cubic-bezier(0.16, 1, 0.3, 1) calc(var(--i) * 9ms), color 0.11s linear calc(var(--i) * 9ms); }
+.btn__ch::after { content: attr(data-c); position: absolute; left: 0; top: 100%; color: var(--lc); }
+.btn__sep { width: 4px; height: 4px; border-radius: 50%; background: var(--lc); opacity: 0.45; margin: 0 10px; }
+.btn__chip { position: relative; z-index: 1; flex: none; width: var(--ch); height: var(--ch); border-radius: 50%; overflow: hidden; display: grid; place-items: center; color: var(--yellow);
+  background: radial-gradient(120% 90% at 30% 20%, #3a3a43, #0b0b0e 70%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 2px 6px -1px rgba(0, 0, 0, 0.5);
+  transition: translate 0.25s var(--out); }
+.btn__trace { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke-linecap: round; }
+.btn__trace .dim { stroke: rgba(255, 255, 255, 0.16); stroke-width: 1.1; }
+.btn__trace .lit { stroke: var(--yellow); stroke-width: 1.4; stroke-linecap: butt; stroke-dasharray: 1 2; stroke-dashoffset: 1; transition: stroke-dashoffset 0.5s cubic-bezier(0.65, 0, 0.35, 1) 0.12s; }
+.btn__trace .pad { fill: rgba(255, 255, 255, 0.05); stroke: rgba(255, 255, 255, 0.22); stroke-width: 1.1; transition: fill 0.14s, stroke 0.14s; }
+.btn__arrow { position: relative; width: 12px; height: 12px; display: block; transition: color 0s linear 0.07s; }
+.btn-big .btn__arrow { width: 15px; height: 15px; }
+.btn__arrow svg { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+@keyframes btnArrow { 0% { translate: 0 0; } 38% { translate: 3.5px 0; } 100% { translate: 0 0; } }
+.btn__ripple { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.2) 55%, rgba(255, 255, 255, 0)); animation: btnBloom 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; pointer-events: none; }
+@keyframes btnBloom { from { transform: scale(0.3); opacity: 1; } to { transform: scale(7); opacity: 0; } }
+/* hover: the bezel tightens, the cap lifts, the letters roll, the ring lights and the arrow fills */
+.btn:hover .btn__bezel { inset: calc(var(--bz) * -0.7); box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.9), inset 0 0 0 1px rgba(255, 255, 255, 0.22), 0 12px 24px -6px rgba(30, 20, 5, 0.5); }
+.btn:hover .btn__cap { translate: 0 -1px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -2px 0 rgba(0, 0, 0, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.5), 0 10px 22px -10px var(--yellow); }
+.btn:hover .btn__cap::before { opacity: 0.6; }
+.btn:hover .btn__ch { transform: translateY(-100%); color: transparent; }
+.btn:hover .btn__trace .lit { stroke-dashoffset: 0; }
+.btn:hover .btn__trace .pad { fill: var(--yellow); stroke: var(--yellow); }
+.btn:hover .btn__arrow { color: #0b0b0e; animation: btnArrow 0.55s cubic-bezier(0.33, 1, 0.68, 1) 0.08s; }
+.btn:hover .btn__label, .btn:hover .btn__chip { translate: 0 -1px; }
+/* press: everything on the cap goes down into the bezel */
+.btn:active .btn__cap { transition-duration: 0.07s; translate: 0 2px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 3px 7px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.3); }
+.btn:active .btn__label, .btn:active .btn__chip { translate: 0 2px; transition: translate 0.07s; }
+@media (prefers-reduced-motion: reduce) { .btn__cap::after { display: none; } .btn__ch, .btn__ch::after, .btn__trace .lit { transition: none; } .btn:hover .btn__arrow { animation: none; } }
+.swatches button:focus-visible, .mark:focus-visible, .stops a:focus-visible, .tabs a:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+.btn:focus-visible { outline: 2px solid var(--blue); outline-offset: calc(var(--bz) + 4px); }
+
+.rail {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 6;
+  display: flex; align-items: center; gap: 16px;
+  padding: var(--pad); pointer-events: none;
+  text-transform: uppercase; letter-spacing: 0.16em; font-size: 11px;
+}
+/* a soft plate behind the track, so nothing in the world reads through it */
+/* one flat colour faded out upwards by a mask, so the colour itself can cross-fade when the scene changes (a gradient can't) */
+.rail::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 132px; z-index: -1; pointer-events: none; background-color: rgba(246, 241, 234, 0.92); -webkit-mask-image: linear-gradient(to top, #000 30%, transparent); mask-image: linear-gradient(to top, #000 30%, transparent); transition: opacity 0.5s, background-color 0.9s; }
+body.night .rail::before { background-color: rgba(14, 18, 48, 0.92); }
+body.proj .rail::before { background-color: rgba(30, 30, 36, 0.9); }
+body:has(#hud.is-on) .rail::before { background-color: rgba(7, 7, 11, 0.62); }
+body.diving .rail::before { opacity: 0; }
+body.sky-blue .rail::before, body.at-end .rail::before { background-color: rgba(22, 44, 170, 0.9); }
+/* the track: a chunky rail in the page's own colours. A blue chip for where you are, a yellow fill for how far, a dot per stop, and a small Mosey riding along it. */
+.rail-count { display: inline-flex; align-items: baseline; gap: 6px; background: var(--blue); color: #fff; padding: 7px 12px 7px 11px; border-radius: 999px; letter-spacing: 0.1em; box-shadow: 0 3px 0 rgba(10, 20, 90, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.35); }
+.rail-count b { font-family: var(--display); font-weight: 400; font-size: 13px; letter-spacing: 0.02em; }
+.rail-count i { font-style: normal; opacity: 0.7; font-size: 10px; }
+.rail-name { width: 132px; text-align: center; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; font-family: var(--display); font-size: 13px; letter-spacing: 0.02em; text-transform: none; background: #15151a; color: #fff; padding: 7px 13px 8px; border-radius: 999px; margin-left: -8px; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.18); white-space: nowrap; }
+.rail-line { flex: 1; height: 12px; border-radius: 999px; position: relative; background: #15151a; box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.8), 0 0 0 2.5px rgba(251, 248, 243, 0.92), 0 4px 0 2px rgba(0, 0, 0, 0.16); }
+.rail-line > i { position: absolute; left: 2px; top: 2px; bottom: 2px; width: 0; min-width: 8px; max-width: calc(100% - 4px); border-radius: 999px; background: linear-gradient(180deg, #ffe27a, var(--yellow) 55%, #d9a40c); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 0 10px rgba(246, 194, 26, 0.45); }
+.rail-ticks { position: absolute; inset: 0; }
+.rail-ticks b { position: absolute; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: rgba(255, 255, 255, 0.42); transition: background 0.3s; }
+.rail-ticks b.is-done { background: rgba(21, 21, 26, 0.55); }
+.rail-bot { position: absolute; top: 50%; left: 0; width: 22px; height: 18px; margin: -15px 0 0 -11px; border-radius: 6px; background: linear-gradient(180deg, #eceef2, #a9adb6); box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.7); transition: transform 0.3s var(--spring); }
+.rail-bot::before { content: ""; position: absolute; inset: 3px; border-radius: 3px; background: #101014; }
+.rail-bot::after { content: ""; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #050507; box-shadow: 0 0 0 1.5px #c9982e, 0 0 6px rgba(255, 226, 160, 0.8); }
+.rail-bot s { position: absolute; left: 50%; top: -6px; width: 2px; height: 6px; margin-left: -1px; background: #15151a; }
+.rail-bot s::after { content: ""; position: absolute; left: -2px; top: -4px; width: 6px; height: 6px; border-radius: 50%; background: #c9982e; }
+.rail-bot.is-moving { transform: translateY(-3px) rotate(-6deg); }
+.rail-hint { display: inline-flex; align-items: center; gap: 8px; background: var(--yellow); color: var(--on-accent, var(--ink)); padding: 7px 12px; border-radius: 999px; box-shadow: 0 3px 0 rgba(120, 90, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.6); }
+.rail-hint::after { content: "↓"; font-size: 12px; animation: railNudge 1.2s var(--out) infinite; }
+@keyframes railNudge { 0%, 100% { transform: translateY(-1px); } 50% { transform: translateY(3px); } }
+/* it floats over the end of the track, so the track keeps its length when it comes and goes */
+.rail-hint { position: absolute; right: var(--pad); bottom: calc(var(--pad) + 62px); transition: opacity 0.4s, transform 0.5s var(--out); white-space: nowrap; }
+.rail-hint.is-off { opacity: 0; transform: translateY(8px); }
+body.at-end .rail { color: #fff; }
+.rail { transition: color 0.4s; }
+/* the links stand on the track, each where its stop is on the walk. They come in pairs, back to back, so two stops that are close never run into each other */
+.stops { position: absolute; inset: 0; pointer-events: none; color: var(--nav-c); font-weight: 600; letter-spacing: 0.14em; font-size: 10.5px; transition: opacity 0.3s, color 0.4s; }
+.stops a { position: absolute; left: var(--x); bottom: 12px; padding: 0 0 13px 9px; white-space: nowrap; text-decoration: none; pointer-events: auto; transition: color 0.3s, translate 0.4s var(--spring); }
+.stops a::before { content: ""; position: absolute; left: 0; bottom: 2px; width: 1.5px; height: 22px; background: currentColor; opacity: 0.55; transform-origin: bottom; transition: transform 0.4s var(--spring), opacity 0.3s; }
+.stops a::after { content: ""; position: absolute; left: -3px; bottom: -8px; width: 8px; height: 8px; border-radius: 50%; background: var(--yellow); box-shadow: 0 0 0 2px #15151a; }
+.stops a:nth-child(odd) { left: auto; right: calc(100% - var(--x)); padding: 0 9px 13px 0; }
+.stops a:nth-child(odd)::before { left: auto; right: 0; } .stops a:nth-child(odd)::after { left: auto; right: -3px; }
+.stops a:hover, .stops a.is-on { color: var(--nav-on); translate: 0 -4px; }
+.stops a:hover::before, .stops a.is-on::before { transform: scaleY(1.18); opacity: 1; }
+.stops a:hover::after, .stops a.is-on::after { translate: 0 4px; }      /* the dot stays on the track while the name lifts */
+body.diving .stops { opacity: 0; }
+/* the captions step up to leave the names their room */
+:is(.hudline, .end, .hero-line, .note:not(.note-left):not(.top)) { margin-bottom: 34px; }
+
+/* ---------- the page is the scroll track, copy rides above the canvas ---------- */
+main { position: relative; z-index: 3; pointer-events: none; }
+section { position: relative; min-height: 100vh; }
+
+.copy {
+  position: fixed; z-index: 4;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.7s var(--spring);
+}
+.copy.is-on { opacity: 1; transition: opacity 0.4s ease, transform 0.7s var(--spring); }
+.copy.is-on a, .copy.is-on button { pointer-events: auto; }
+
+.eyebrow, .tag-no, .fine { text-transform: uppercase; letter-spacing: 0.16em; font-size: 11px; }
+.fine { opacity: 0.62; letter-spacing: 0.12em; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #2bb673; margin-right: 6px; box-shadow: 0 0 0 4px rgba(43, 182, 115, 0.18); }
+.lede { font-size: clamp(14px, 1.15vw, 17px); max-width: 38ch; }
+.cta-row { display: flex; align-items: center; gap: 18px; margin-top: 24px; flex-wrap: wrap; }
+.cta-row.center { justify-content: center; }
+
+/* hero: the headline is 3D letters in the world, the page adds the offer under it */
+.hero { left: 50%; translate: -50% 0; bottom: calc(var(--pad) + 62px); width: max-content; max-width: calc(100vw - 2 * var(--pad)); text-align: center; transform: translateY(18px); }
+.hero.is-on { transform: none; }
+.hero .btn { display: flex; width: max-content; margin: 0 auto; }
+.hero:not(.hero-line) { bottom: 18vh; }
+/* the line of copy and the tracker along the bottom only arrive once the box has landed */
+.hero-line { width: max-content; max-width: min(92vw, 900px); text-align: left; }      /* a label (see "the label" below), so it reads over the fallen letters */
+.hero-line.is-on { opacity: 0; }
+body.boxed .hero-line.is-on { opacity: 1; }
+.rail { opacity: 0; transition: opacity 0.6s, color 0.4s; }
+body.boxed .rail { opacity: 1; }
+.hero .fine { margin-top: 16px; }
+
+/* the card: copy sits on Mosey's own screen. Dark glass with a gold rim, brackets that lock on when it arrives, one scan down,
+   the body line typed out on a fixed clock, and a lens in the corner that looks at your cursor. js/cards.js builds the parts:
+   .card-in is the glass, .eye the lens, .rec the little label, .brk the four brackets, .typed the typed line. */
+.tag {
+  width: min(34ch, 78vw); font-size: 14px; color: #f3efe7;
+  top: 50%; translate: 0 -50%;
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: opacity 0.12s ease;
+}
+.tag.is-on { pointer-events: auto; transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: opacity 0.3s ease, transform 0.25s var(--out); }
+.tag[data-side="left"] { left: var(--pad); }
+.tag[data-side="right"] { right: var(--pad); }
+.card-in {
+  position: relative; overflow: hidden; padding: 62px 24px 24px; border-radius: 22px; color: #f3efe7;
+  background: linear-gradient(160deg, #1b1b22, #0a0a0e 60%);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 0 5px #15151a, 0 0 0 6.5px rgba(246, 194, 26, 0.55), 0 24px 34px -8px rgba(10, 8, 30, 0.5);
+  scale: 0.9; transition: scale 0s 0.3s;      /* leaving: it only fades. It goes back to small once it is out of sight */
+}
+.is-on > .card-in { scale: 1; transition: scale 0.6s var(--spring); }
+/* a soft light where the cursor is, and faint screen lines */
+.card-in::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(260px circle at var(--mx, 30%) var(--my, 0%), rgba(255, 255, 255, 0.13), transparent 65%), repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.028) 0 1px, transparent 1px 3px); }
+/* one scan when it arrives, like SEES */
+.card-in::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 46px; pointer-events: none; background: linear-gradient(180deg, transparent, rgba(246, 194, 26, 0.3) 85%, rgba(255, 236, 170, 0.95)); opacity: 0; }
+.is-on > .card-in::after { animation: cardScan 0.95s cubic-bezier(0.5, 0, 0.3, 1) 0.1s both; }
+@keyframes cardScan { 0% { opacity: 1; translate: 0 -46px; } 85% { opacity: 1; } 100% { opacity: 0; translate: 0 var(--h, 320px); } }
+/* the lines arrive one after the other */
+.is-on > .card-in > * { animation: cardRise 0.4s var(--out) both; animation-delay: calc(var(--i, 0) * 0.05s); }      /* the words start arriving while the glass is still fading in, so the card is never an empty slab */
+@keyframes cardRise { from { opacity: 0; translate: 0 10px; } to { opacity: 1; translate: 0 0; } }
+.card-in > .eye { position: absolute; left: 20px; top: 16px; width: 34px; height: 34px; opacity: 1; animation: none; }
+.eye .look { translate: var(--ex, 0px) var(--ey, 0px); transition: translate 0.14s linear; }
+.eye .lid { transform-origin: 50% 50%; animation: cardBlink 5.2s infinite; }
+@keyframes cardBlink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.2); } }      /* not all the way shut: a dark line reads as a closed eye, a white disc reads as a missing one */
+.card-in > .rec { position: absolute; right: 20px; top: 26px; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255, 255, 255, 0.6); opacity: 1; animation: none; }
+.rec::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #ff4d3d; margin-right: 7px; animation: cardRec 1.2s steps(2) infinite; }
+@keyframes cardRec { 50% { opacity: 0.2; } }
+.brk { position: absolute; width: 16px; height: 16px; border: 2px solid var(--yellow); pointer-events: none; opacity: 0; transition: inset 0s 0.3s, opacity 0.12s; }
+.is-on > .brk { opacity: 1; transition: inset 0.7s var(--spring) 0.05s, opacity 0.2s; }
+.brk.tl { border-right: 0; border-bottom: 0; left: -3px; top: -3px; border-radius: 6px 0 0 0; } .brk.tr { border-left: 0; border-bottom: 0; right: -3px; top: -3px; border-radius: 0 6px 0 0; }
+.brk.bl { border-right: 0; border-top: 0; left: -3px; bottom: -3px; border-radius: 0 0 0 6px; } .brk.br { border-left: 0; border-top: 0; right: -3px; bottom: -3px; border-radius: 0 0 6px 0; }
+.is-on > .brk.tl { left: -14px; top: -14px; } .is-on > .brk.tr { right: -14px; top: -14px; } .is-on > .brk.bl { left: -14px; bottom: -14px; } .is-on > .brk.br { right: -14px; bottom: -14px; }
+/* typed: every letter is in place from the start, so nothing reflows. Typing only switches them on */
+.typed .ch { opacity: 0; } .typed .ch.on { opacity: 1; } .typed .ch.cur { background: var(--yellow); color: var(--ink); }
+.tag-wide { width: min(46ch, 88vw); }
+.tag h2, .tag p, .note p, .lede, dd { text-wrap: balance; }
+.tag .drag { display: table; color: var(--yellow); border: 1.5px solid var(--yellow); border-radius: 999px; padding: 5px 12px; margin-top: 14px; }
+.tag-no { color: var(--yellow); }
+.tag h2 {
+  font-family: var(--display); font-weight: 400;
+  font-size: clamp(26px, 2.5vw, 38px); line-height: 0.98; letter-spacing: -0.025em;
+  margin: 10px 0 12px;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.chips li { border: 1px solid rgba(246, 194, 26, 0.6); color: var(--yellow); border-radius: 999px; padding: 3px 10px; font-size: 11px; letter-spacing: 0.04em; }
+.ticks { margin-top: 4px; }
+.ticks li { padding: 8px 0 8px 22px; border-top: 1px solid rgba(255, 255, 255, 0.16); position: relative; }
+.ticks li::before { content: ""; position: absolute; left: 2px; top: 13px; width: 9px; height: 5px; border-left: 2px solid var(--yellow); border-bottom: 2px solid var(--yellow); transform: rotate(-45deg); }
+blockquote { font-family: var(--display); font-size: 18px; line-height: 1.12; letter-spacing: -0.01em; margin: 6px 0 14px; }
+cite { display: block; font-family: var(--mono); font-style: normal; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.62; margin-top: 8px; }
+
+dl { border-top: 1px solid rgba(255, 255, 255, 0.16); margin-bottom: 12px; }
+dl div { display: flex; justify-content: space-between; gap: 20px; padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.16); }
+dt { text-transform: uppercase; letter-spacing: 0.14em; font-size: 11px; opacity: 0.6; white-space: nowrap; }
+dd { text-align: right; }
+
+.swatches { display: flex; gap: 12px; margin: 16px 0 10px; }
+.swatches button {
+  width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--c); cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12), inset 0 -6px 10px rgba(0, 0, 0, 0.12), inset 0 6px 8px rgba(255, 255, 255, 0.35);
+  transition: transform 0.3s var(--spring);
+}
+.swatches button:hover { transform: scale(1.14) rotate(-6deg); }
+.swatches button.is-on { box-shadow: inset 0 -6px 10px rgba(0, 0, 0, 0.12), inset 0 6px 8px rgba(255, 255, 255, 0.35), 0 0 0 3px #101014, 0 0 0 5px var(--yellow); }
+.wayname { text-transform: uppercase; letter-spacing: 0.14em; font-size: 11px; margin-bottom: 18px; }
+/* sizes: the switch between Mosey and Mosey XL on the Colours card, and the line that says what the size gets you (js/sizes.js) */
+.size-sw { display: flex; gap: 8px; margin-top: 14px; }
+.size-sw button { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 9px 12px 10px; border-radius: 12px; border: 1.5px solid rgba(255, 255, 255, 0.22); background: rgba(255, 255, 255, 0.05); color: #f3efe7; font: inherit; text-align: left; cursor: pointer; transition: background 0.2s, border-color 0.2s, color 0.2s, translate 0.15s; }
+.size-sw button b { font-family: var(--display); font-weight: 400; font-size: 15px; letter-spacing: -0.01em; white-space: nowrap; }
+.size-sw button span { font-size: 11px; letter-spacing: 0.12em; opacity: 0.75; }
+.size-sw button:hover { translate: 0 -1px; border-color: rgba(255, 255, 255, 0.5); }
+.size-sw button:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.size-sw button.is-on { background: var(--yellow); border-color: var(--yellow); color: var(--ink); }
+.size-line { margin-top: 10px; font-size: 12px; line-height: 1.45; color: rgba(255, 255, 255, 0.78); min-height: 2.9em; }
+.size-sw + .size-line + .swatches { margin-top: 12px; }
+.wayname span { font-weight: 600; }
+
+/* the end: the headline is in the 3D world, the page only adds the offer */
+#veil { display: none; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.end { left: 50%; bottom: calc(var(--pad) + 54px); translate: -50% 0; width: max-content; max-width: min(92vw, 760px); text-align: left; color: var(--ink); transform: translateY(24px); }
+.end.is-on { transform: none; }
+
+/* the label: the line under the box on the first screen and the price at the very end are shipping labels, like the one printed
+   on the box. A blue band, a barcode, a strip of the box's yellow tape, and a round price sticker. It is slapped on at a small
+   angle, then the tape goes on, then the sticker is stamped on it. */
+.lb { position: relative; background: #fdfbf6; color: var(--ink); border: 2px solid var(--ink); border-radius: 5px; rotate: -1.2deg;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 16px 22px -8px rgba(20, 15, 5, 0.38), 0 2px 3px rgba(20, 15, 5, 0.25); }
+.lb-end { rotate: 0.9deg; }
+.lb-top { display: flex; justify-content: space-between; gap: 40px; padding: 8px 92px 8px 16px; background: var(--blue); color: #fff; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; font-size: 11px; white-space: nowrap; border-radius: 2px 2px 0 0; }
+.lb-body { display: flex; align-items: center; padding: 13px 18px 13px 16px; background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(21, 21, 26, 0.018) 3px 4px); }
+.lb-line { font-size: clamp(15px, 1.35vw, 20px); font-weight: 600; text-wrap: balance; }
+.lb-row { display: flex; flex-direction: column; gap: 7px; margin: 0 40px 0 22px; padding-left: 18px; border-left: 2px solid var(--ink); text-transform: uppercase; letter-spacing: 0.12em; font-size: 9.5px; font-weight: 700; white-space: nowrap; }
+.lb-bar { display: block; width: 118px; height: 22px; flex: none; background: repeating-linear-gradient(90deg, var(--ink) 0 2px, transparent 2px 3px, var(--ink) 3px 4px, transparent 4px 7px, var(--ink) 7px 10px, transparent 10px 12px, var(--ink) 12px 13px, transparent 13px 16px); }
+.lb-name { font-family: var(--display); font-size: clamp(24px, 2.6vw, 38px); line-height: 1; letter-spacing: -0.03em; color: var(--blue); text-transform: uppercase; white-space: nowrap; }
+.lb-fine { margin-top: 8px; font-size: 12.5px; opacity: 0.8; text-wrap: balance; }
+.lb-stamp { flex: none; margin: 14px 26px 0 26px; padding: 7px 12px; border: 2px solid #d5392b; color: #d5392b; border-radius: 4px; rotate: -5deg; text-transform: uppercase; letter-spacing: 0.16em; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.lb-price { position: absolute; right: -30px; top: -36px; width: 92px; height: 92px; border-radius: 50%; display: grid; place-content: center; text-align: center; rotate: 9deg;
+  background: radial-gradient(circle at 35% 28%, #ffe27a, var(--yellow) 60%); color: var(--ink); font-family: var(--display); font-weight: 400; font-size: 27px; line-height: 0.95; letter-spacing: -0.03em;
+  box-shadow: 0 6px 10px -3px rgba(20, 15, 5, 0.45), inset 0 0 0 2px rgba(21, 21, 26, 0.9), inset 0 0 0 5px var(--yellow), inset 0 0 0 6px rgba(21, 21, 26, 0.35); }
+.lb-price small { display: block; font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 2px; }
+.lb-tape { position: absolute; left: 50%; top: -15px; width: 96px; height: 28px; margin-left: -60px; rotate: -3deg; background: rgba(246, 208, 80, 0.82); box-shadow: 0 2px 3px rgba(20, 15, 5, 0.2); clip-path: polygon(0 0, 4% 50%, 0 100%, 100% 100%, 96% 50%, 100% 0); z-index: 1; }
+/* the first one waits for the box to land (body.boxed), the last one for its turn. Then: slap, tape, stamp */
+:is(body.boxed .hero-line, .end).is-on .lb { animation: lbSlap 0.55s var(--spring) both; }
+@keyframes lbSlap { from { opacity: 0; scale: 1.28; rotate: -7deg; translate: 0 -26px; } 40% { opacity: 1; } }
+:is(body.boxed .hero-line, .end).is-on .lb-tape { animation: lbTape 0.3s var(--out) 0.3s both; }
+@keyframes lbTape { from { opacity: 0; translate: 0 -14px; } }
+:is(body.boxed .hero-line, .end).is-on .lb-price { animation: lbStamp 0.5s var(--spring) 0.42s both; }
+@keyframes lbStamp { from { opacity: 0; scale: 2.3; rotate: 40deg; } 35% { opacity: 1; } }
+:is(body.boxed .hero-line, .end).is-on .lb-stamp { animation: lbInk 0.35s var(--spring) 0.75s both; }
+@keyframes lbInk { from { opacity: 0; scale: 1.7; } }
+@media (prefers-reduced-motion: reduce) { .lb, .lb-tape, .lb-price, .lb-stamp { animation: none !important; } }
+.chip-film { border: 1.5px dashed rgba(255, 255, 255, 0.6); border-radius: 999px; padding: 13px 18px; text-transform: uppercase; letter-spacing: 0.14em; font-size: 11px; }
+
+/* callouts: a dot on the robot, a line, a label. Placed every frame from the 3D scene. */
+.callout {
+  position: fixed; left: 0; top: 0; z-index: 4; pointer-events: none;
+  padding-left: 84px; white-space: nowrap; opacity: 0; transition: opacity 0.35s ease;
+  will-change: transform;
+}
+.callout.is-on { opacity: 1; }
+.callout::before { content: ""; position: absolute; left: -5px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 4px rgba(21, 21, 26, 0.14); }
+.callout::after { content: ""; position: absolute; left: 5px; top: 50%; width: 0; height: 1.5px; background: var(--ink); transition: width 0.5s var(--out) 0.1s; }
+.callout.is-on::after { width: 70px; }
+.callout b { display: table; font-family: var(--display); font-weight: 400; font-size: 19px; letter-spacing: -0.01em; line-height: 1.1; background: var(--paper); color: var(--ink); padding: 5px 10px 2px; border-radius: 8px 8px 0 0; }
+.callout span { display: table; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; background: var(--paper); color: rgba(21, 21, 26, 0.72); padding: 2px 10px 6px; border-radius: 0 8px 8px 8px; }
+.callout[data-dir="l"] b, .callout[data-dir="l"] span { margin-left: auto; } .callout[data-dir="l"] span { border-radius: 8px 0 8px 8px; }
+.callout[data-dir="l"] { padding-left: 0; padding-right: 84px; text-align: right; }
+.callout[data-dir="l"]::before { left: auto; right: -5px; }
+.callout[data-dir="l"]::after { left: auto; right: 5px; }
+
+/* a short caption at the bottom, for moments where the picture needs the whole screen */
+.note { left: 50%; bottom: calc(var(--pad) + 58px); translate: -50% 0; width: min(92vw, 62ch); transform: translateY(18px); transition: opacity 0.12s ease, transform 0.3s; }
+.note.is-on { transform: none; }
+.note .card-in { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; padding: 16px 24px 16px 64px; border-radius: 18px; }
+.note .card-in > .eye { left: 18px; top: 50%; margin-top: -15px; width: 30px; height: 30px; }
+.note .card-in::after { display: none; }      /* a caption is too small for the scan line: it ran through the headline */
+/* beside the action, when the middle and the bottom of the picture are both busy */
+.note-left { left: auto; right: var(--pad); translate: 0 0; bottom: auto; top: 17vh; width: min(30ch, 40vw); }
+.note-left .card-in { flex-direction: column; gap: 8px; padding: 58px 22px 20px; }
+.note-left .card-in > .eye { left: 20px; top: 16px; margin-top: 0; }
+.note.note-left h2 { white-space: normal; } .note.note-left p { min-width: 0; }
+/* on a wide screen a caption can sit in a bottom corner, clear of the middle where it walks */
+@media (min-width: 821px) {
+  .note-left.br { top: auto; bottom: calc(var(--pad) + 62px); width: min(29ch, 28vw); }
+  .note-left.bl { top: auto; bottom: calc(var(--pad) + 62px); right: auto; left: var(--pad); width: min(29ch, 28vw); }
+  .mapchip.mapchip { top: 122px; left: var(--pad); translate: 0 0; }      /* the counter sits under the seal, out of the picture's way */      /* the counter sits just over the track, with the other things that say where you are */
+}
+.note h2 { font-family: var(--display); font-weight: 400; font-size: 22px; letter-spacing: -0.02em; line-height: 1.05; white-space: nowrap; }
+.note p { flex: 1; min-width: 24ch; }
+
+/* what Mosey projects: four keys */
+.thumbs { display: flex; gap: 6px; margin: 14px 0 14px; flex-wrap: wrap; }
+.thumbs button {
+  font: inherit; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
+  background: #23232b; color: #fff; border: 1.5px solid rgba(255, 255, 255, 0.35); border-radius: 9px; padding: 7px 10px;
+  box-shadow: 0 3px 0 #000; transform: translateY(-3px); transition: transform 0.12s var(--out), box-shadow 0.12s var(--out), background 0.2s;
+}
+.thumbs button:hover { box-shadow: 0 5px 0 #000; transform: translateY(-5px); }
+.thumbs button:active, .thumbs button.is-on { box-shadow: 0 1px 0 #000; border-color: var(--yellow); transform: translateY(-1px); background: var(--yellow); color: var(--on-accent, var(--ink)); }
+
+/* the fall: one line at a time */
+.recap {
+  right: 6vw; top: 50%; translate: 0 -50%; color: #fff; max-width: 44vw; text-align: right;
+  font-family: var(--display); font-size: clamp(40px, 6vw, 100px); line-height: 0.9; letter-spacing: -0.04em;
+  transform: translateY(40px); transition: opacity 0.15s ease, transform 0.5s var(--spring);
+}
+.recap.is-on { transform: none; }
+
+#toast {
+  position: fixed; left: 50%; top: 22%; z-index: 9; translate: -50% 0; pointer-events: none;
+  background: var(--paper); color: var(--ink); padding: 12px 18px; border-radius: 12px; box-shadow: 0 5px 0 rgba(0, 0, 0, 0.25);
+  font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+  opacity: 0; transform: translateY(12px) scale(0.96); transition: opacity 0.25s, transform 0.4s var(--spring);
+}
+#toast.is-on { opacity: 1; transform: none; }
+
+/* the phone (js/phone.js). At the stove the picture pulls back and turns out to be your phone. --pk goes from 0 (the full
+   picture) to 1 (the phone). The canvas and the HUD over it are moved, scaled and rounded with it. The frame gets the same move
+   and carries the bezel as a shadow outside its own edge, so at 0 the bezel is off the screen and nothing shows. */
+/* --pk changes on every frame of the pull back. js/phone.js puts it on the four elements that use it, and it is not handed down:
+   on <html> it reached every element of the page, and the browser restyled all of them sixty times a second. */
+@property --pk { syntax: "<number>"; inherits: false; initial-value: 0; }
+:root { --pk: 0; --pbx: -19vw; --pby: 1vh; --pbs: 0.5; }
+body.pb-on :is(#world, #hud), .pb-frame { transform-origin: 50% 50%; transform: translate(calc(var(--pbx) * var(--pk)), calc(var(--pby) * var(--pk))) scale(calc(1 - var(--pbs) * var(--pk))); }
+body.pb-on :is(#world, #hud) { clip-path: inset(0 round calc(72px * var(--pk))); }
+.pb-back { position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: calc(var(--pk) * 30); background: radial-gradient(90vmax 70vmax at 30% 45%, #23263a, #0b0b10 70%); }
+.pb-frame { position: fixed; inset: 0; z-index: 3; pointer-events: none; opacity: calc(var(--pk) * 30); border-radius: 72px;
+  box-shadow: 0 0 0 26px #0e0e12, 0 0 0 29px #3b3b46, 0 0 0 30px #000, 0 90px 150px 30px rgba(0, 0, 0, 0.65), inset 0 0 0 2px rgba(255, 255, 255, 0.08); }
+.pb-frame::after { content: ""; position: absolute; left: 22px; top: 50%; width: 22px; height: 86px; margin-top: -43px; border-radius: 12px; background: #050507; }
+.pb-side { position: fixed; z-index: 6; left: 60vw; top: 50%; translate: 0 -50%; width: min(390px, 33vw); color: #fff; pointer-events: none; }
+.pb-h { font-family: var(--display); font-size: clamp(22px, 2.3vw, 34px); line-height: 1.02; letter-spacing: -0.02em; text-wrap: balance; margin-bottom: 18px; opacity: 0; translate: 0 14px; transition: opacity 0.25s, translate 0.6s var(--spring); }
+.pb-side.on .pb-h { opacity: 1; translate: 0 0; transition: opacity 0.4s, translate 0.6s var(--spring); }
+.pb-list { display: flex; flex-direction: column; gap: 10px; }
+/* one notification, the way a phone shows it */
+.pn { background: rgba(251, 248, 243, 0.95); color: var(--ink); border-radius: 20px; padding: 12px 15px 13px; text-align: left; font-size: 13px; line-height: 1.35;
+  box-shadow: 0 16px 30px -12px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.7); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  opacity: 0; transform: translateX(50px) scale(0.94); transition: transform 0.3s var(--out), opacity 0.2s; }
+.pn.on { opacity: 1; transform: none; transition: transform 0.7s var(--spring), opacity 0.25s; }
+.pn-top { display: flex; align-items: center; gap: 8px; font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(21, 21, 26, 0.62); }
+.pn-top svg { width: 20px; height: 20px; flex: none; } .pn-top b { color: var(--ink); } .pn-top span { margin-left: auto; }
+.pn-t { font-family: var(--display); font-size: 16px; letter-spacing: -0.01em; margin-top: 7px; }
+.pn-b { margin-top: 3px; color: rgba(21, 21, 26, 0.78); }
+.pn-acts { display: flex; gap: 8px; margin-top: 11px; }
+.pn-acts button { flex: 1; height: 38px; border: 0; border-radius: 12px; font: inherit; font-weight: 700; font-size: 12px; cursor: pointer; color: #fff;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 50%), var(--blue); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), inset 0 -3px 0 rgba(0, 0, 30, 0.35); transition: translate 0.12s, box-shadow 0.12s, filter 0.2s; }
+.pn.on .pn-acts button { pointer-events: auto; }
+.pn-acts button.quiet { color: var(--ink); background: #e6e0d3; box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 rgba(0, 0, 0, 0.15); }
+.pn-acts button:hover { filter: brightness(1.08); }
+.pn-acts button:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.pn-acts button:active, .pn.hit .pn-acts button:first-child { translate: 0 2px; box-shadow: inset 0 3px 6px rgba(0, 0, 30, 0.5); }
+.pn-done { display: none; margin-top: 9px; font-weight: 700; color: #17804b; } .pn-done::before { content: "✓  "; }
+.pn.no .pn-done { color: rgba(21, 21, 26, 0.7); } .pn.no .pn-done::before { content: ""; }
+.pn.answered .pn-acts { display: none; } .pn.answered .pn-done { display: block; animation: pnDone 0.45s var(--spring); }
+@keyframes pnDone { from { opacity: 0; translate: 0 8px; } }
+
+/* night: the page chrome inverts while the lights are out */
+body.night .rail { color: #fff; }
+
+/* through its lens: an iris you pass through, and what it recognises */
+#iris { position: fixed; inset: 0; z-index: 5; display: none; pointer-events: none;
+  background: radial-gradient(circle at 50% 48%, transparent calc(var(--r, 84) * 1vmax - 2.5vmax), #07070b calc(var(--r, 84) * 1vmax)); }
+#hud { position: fixed; inset: 0; z-index: 3; pointer-events: none; opacity: 0; transition: opacity 0.35s; color: var(--yellow); text-transform: uppercase; letter-spacing: 0.16em; font-size: 11px; }
+#hud.is-on { opacity: 1; }
+#hud::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, transparent 52%, rgba(7, 7, 11, 0.62) 100%), repeating-linear-gradient(0deg, rgba(7, 7, 11, 0.05) 0 1px, transparent 1px 4px); }
+#hud .c { position: absolute; width: 42px; height: 42px; border: 2.5px solid currentColor; }
+#hud .tl { left: 4vw; top: 13vh; border-right: 0; border-bottom: 0; } #hud .tr { right: 4vw; top: 13vh; border-left: 0; border-bottom: 0; }
+#hud .bl { left: 4vw; bottom: 11vh; border-right: 0; border-top: 0; } #hud .br { right: 4vw; bottom: 11vh; border-left: 0; border-top: 0; }
+.hud-a, .hud-b { position: absolute; top: calc(13vh + 12px); background: #07070b; padding: 5px 10px; border-radius: 6px; }
+.hud-a { left: calc(4vw + 14px); } .hud-b { right: calc(4vw + 14px); }
+#hud.film .reticle { display: none; }
+.vtag.lock:not(.main) p { opacity: 0; }
+/* the sound switch: four bars in the top bar, next to Reserve. They move while the sound is on (js/sound.js) */
+.snd { margin-left: auto; margin-right: -10px; width: 40px; height: 40px; flex: none; border: 0; border-radius: 50%; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; color: var(--nav-c); opacity: 0.55; transition: color 0.9s, opacity 0.3s; }
+.snd:hover, .snd[aria-pressed="true"] { opacity: 1; }
+.snd:focus-visible { outline: 2px solid var(--nav-on); outline-offset: 2px; }
+.snd i { width: 2.5px; height: 15px; border-radius: 2px; background: currentColor; transform: scaleY(0.2); transition: transform 0.3s; }
+.snd[aria-pressed="true"] i { animation: sndBar 0.82s ease-in-out infinite alternate; }
+.snd i:nth-child(2) { animation-duration: 0.61s; animation-delay: -0.3s; } .snd i:nth-child(3) { animation-duration: 0.74s; animation-delay: -0.55s; } .snd i:nth-child(4) { animation-duration: 0.53s; animation-delay: -0.15s; }
+@keyframes sndBar { from { transform: scaleY(0.25); } to { transform: scaleY(1); } }
+@media (prefers-reduced-motion: reduce) { .snd[aria-pressed="true"] i { animation: none; transform: scaleY(0.75); } .snd[aria-pressed="true"] i:nth-child(odd) { transform: scaleY(0.45); } }
+
+/* while its film plays: skip it, or turn its sound off */
+.filmbar { position: fixed; z-index: 6; right: var(--pad); bottom: calc(var(--pad) + 52px); display: flex; align-items: center; gap: 14px; opacity: 0; pointer-events: none; transform: translateY(10px); transition: opacity 0.35s, transform 0.5s var(--spring); }
+.filmbar.is-on { opacity: 1; pointer-events: auto; transform: none; }
+.filmbar button { font: inherit; font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--yellow); background: #07070b; border: 1.5px solid rgba(246, 194, 26, 0.5); border-radius: 999px; padding: 10px 15px; cursor: pointer; }
+.filmbar button[aria-pressed="false"] { color: #fff; border-color: rgba(255, 255, 255, 0.35); }
+
+.reticle { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px; border: 2px solid currentColor; border-radius: 50%; opacity: 0.7; }
+.vtag { position: fixed; left: 0; top: 0; opacity: 0; transition: opacity 0.25s; will-change: transform; --s: 120px; }
+.vtag.is-on { opacity: 1; }
+/* four corner brackets that hunt for the thing, then close on it */
+.vtag i { position: absolute; left: calc(var(--s) / -2); top: calc(var(--s) / -2); width: var(--s); height: var(--s); transform: scale(1.35) rotate(8deg); opacity: 0.55; transition: transform 0.5s var(--spring), opacity 0.3s, width 0.3s, height 0.3s, left 0.3s, top 0.3s; animation: tagHunt 0.9s ease-in-out infinite alternate; }
+.vtag i u { position: absolute; width: 22%; height: 22%; border: 2.5px solid var(--yellow); }
+.vtag i u:nth-child(1) { left: 0; top: 0; border-right: 0; border-bottom: 0; border-radius: 8px 0 0 0; } .vtag i u:nth-child(2) { right: 0; top: 0; border-left: 0; border-bottom: 0; border-radius: 0 8px 0 0; }
+.vtag i u:nth-child(3) { left: 0; bottom: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 8px; } .vtag i u:nth-child(4) { right: 0; bottom: 0; border-left: 0; border-top: 0; border-radius: 0 0 8px 0; }
+.vtag i::after { content: ""; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: var(--yellow); opacity: 0; transition: opacity 0.3s; }
+.vtag.lock i { transform: none; opacity: 1; animation: none; } .vtag.lock i::after { opacity: 1; }
+@keyframes tagHunt { from { filter: none; } to { filter: brightness(1.6); translate: 3px -2px; } }
+.vtag em { position: absolute; left: calc(var(--s) / -2); top: calc(var(--s) / -2 - 22px); font-style: normal; font-size: 10px; letter-spacing: 0.14em; color: var(--yellow); background: rgba(7, 7, 11, 0.7); padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
+.vtag p { position: absolute; left: calc(var(--s) / 2 + 14px); top: -30px; white-space: nowrap; background: #07070b; color: #fff; padding: 9px 14px 10px; border-radius: 10px; opacity: 0; transform: translateX(-10px); transition: opacity 0.3s, transform 0.4s var(--spring); }
+.vtag p::before { content: ""; position: absolute; left: -14px; top: 30px; width: 14px; height: 1.5px; background: var(--yellow); }
+.vtag.lock p { opacity: 1; transform: none; }
+.vtag.flip p { left: auto; right: calc(var(--s) / 2 + 14px); } .vtag.flip p::before { left: auto; right: -14px; }
+.vtag small { display: block; margin-top: 5px; font-size: 9px; letter-spacing: 0.16em; color: var(--yellow); opacity: 0.85; }
+/* a band of light that runs down its view while it looks */
+#hud::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 22vh; background: linear-gradient(180deg, rgba(246, 194, 26, 0), rgba(246, 194, 26, 0.05) 80%, rgba(246, 194, 26, 0.3) 99%, rgba(246, 194, 26, 0)); animation: hudSweep 3.4s linear infinite; pointer-events: none; }
+#hud.film::after { display: none; }
+@keyframes hudSweep { from { transform: translateY(-24vh); } to { transform: translateY(104vh); } }
+.vtag b { display: block; font-family: var(--display); font-weight: 400; font-size: 22px; letter-spacing: 0; text-transform: none; color: var(--yellow); }
+.vtag span { font-size: 11px; letter-spacing: 0.08em; }
+.hudline { left: 50%; bottom: calc(var(--pad) + 56px); translate: -50% 0; width: max-content; max-width: 92vw; background: #07070b; color: #fff; padding: 13px 22px; border-radius: 12px;
+  font-family: var(--display); font-size: clamp(18px, 2vw, 28px); letter-spacing: -0.01em; transform: translateY(20px); }
+.hudline.is-on { transform: none; }
+.hudline::before { content: "▸ "; color: var(--yellow); }
+
+/* the loader: dark glass like the cards, the Good Company seal with its ring of words turning, a thin ring that fills as the page boots,
+   and four brackets locked on. When it is done the seal pops and the screen opens from the lens outwards, like an iris.
+   The hole is a radial gradient used as a mask. Its radius is a registered property, which is what lets CSS animate it. */
+@property --iris { syntax: '<length-percentage>'; inherits: false; initial-value: 0px; }
+#loading {
+  position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; overflow: hidden;
+  background: radial-gradient(120% 90% at 50% 40%, #1c1c24, #08080b 70%); color: #f3efe7; --iris: 0px;
+  -webkit-mask-image: radial-gradient(circle at 50% 46%, transparent var(--iris), #000 calc(var(--iris) + 1.5px)); mask-image: radial-gradient(circle at 50% 46%, transparent var(--iris), #000 calc(var(--iris) + 1.5px));
+}
+.boot-seal { position: relative; width: min(50vw, 290px); aspect-ratio: 1; margin-top: -8vh; }
+.boot-seal img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.boot-seal .ring { animation: bootTurn 9s linear infinite; }
+.boot-seal .core { animation: bootBlink 2.6s infinite; transform-origin: 50% 50%; }
+.boot-seal svg { position: absolute; inset: -13%; width: 126%; height: 126%; rotate: -90deg; }
+.boot-seal circle { fill: none; stroke-width: 1.1; } .boot-seal .bg { stroke: rgba(255, 255, 255, 0.14); }
+.boot-seal .fg { stroke: var(--yellow); stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: calc(100 - var(--p, 0)); }
+.boot-seal .brk { position: absolute; width: 18px; height: 18px; border: 2px solid var(--yellow); opacity: 1; left: auto; top: auto; right: auto; bottom: auto; border-radius: 0; transition: none; animation: bootLock 0.8s var(--spring) both; }
+.boot-seal .brk.a { left: -30%; top: -30%; border-right: 0; border-bottom: 0; } .boot-seal .brk.b { right: -30%; top: -30%; border-left: 0; border-bottom: 0; }
+.boot-seal .brk.c { left: -30%; bottom: -30%; border-right: 0; border-top: 0; } .boot-seal .brk.d { right: -30%; bottom: -30%; border-left: 0; border-top: 0; }
+.boot-line { position: absolute; left: 0; right: 0; top: calc(46% + min(36vw, 205px)); text-align: center; text-transform: uppercase; letter-spacing: 0.26em; font-size: 11px; color: rgba(255, 255, 255, 0.7); }
+.boot-line b { color: var(--yellow); font-weight: 600; font-variant-numeric: tabular-nums; }
+#loading.out { pointer-events: none; animation: bootIris 0.95s cubic-bezier(0.6, 0, 0.2, 1) 0.22s forwards; }
+#loading.out .boot-seal { animation: bootPop 0.45s var(--out) forwards; } #loading.out .boot-line { opacity: 0; transition: opacity 0.2s; }
+#loading.is-done:not(.out) { animation: bootBail 0.6s 8s forwards; }      /* a safety net: if the loader's own script never runs, the page still shows */
+@keyframes bootIris { to { --iris: 150vmax; } } @keyframes bootPop { 35% { scale: 0.86; } 100% { scale: 1.5; opacity: 0; } }
+@keyframes bootLock { from { opacity: 0; scale: 1.5; } to { opacity: 1; scale: 1; } }
+@keyframes bootTurn { to { rotate: 360deg; } } @keyframes bootBlink { 0%, 90%, 100% { transform: scaleY(1); } 94% { transform: scaleY(0.12); } }
+@keyframes bootBail { to { opacity: 0; visibility: hidden; } }
+
+/* the first walk: a counter while the map draws, and labels on the pins it drops */
+.note.top { bottom: auto; top: 124px; }
+.mapchip { position: fixed; z-index: 4; left: 50%; top: 104px; translate: -50% 0; display: flex; align-items: center; gap: 12px; white-space: nowrap; pointer-events: none;
+  background: var(--paper); color: var(--ink); padding: 9px 16px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.14em; font-size: 11px;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25); opacity: 0; transform: translateY(-14px); transition: opacity 0.3s, transform 0.5s var(--spring), background 0.3s; }
+.mapchip.is-on { opacity: 1; transform: none; }
+.mapchip b { font-family: var(--display); font-weight: 400; font-size: 18px; letter-spacing: 0; color: var(--blue); min-width: 4.2ch; text-align: right; }
+.mapchip.done { background: var(--yellow); color: var(--on-accent, var(--ink)); box-shadow: 0 0 0 2.5px var(--ink), 0 6px 0 rgba(0, 0, 0, 0.25); } .mapchip.done b { color: inherit; }
+#mappins { position: fixed; inset: 0; z-index: 3; pointer-events: none; }
+.mpin { position: fixed; left: 0; top: 0; opacity: 0; transition: opacity 0.2s; will-change: transform; }
+.mpin.is-on { opacity: 1; }
+.mpin:not(.is-on) { transition-duration: 0.1s; }      /* out faster than in: a label that has lost its place is gone before the camera carries it under something */
+.mpin.flip p { left: auto; right: 12px; border-radius: 999px 999px 4px 999px; }      /* the label hangs to the left of its pin when the right has no room */
+.mpin p { position: absolute; left: 12px; bottom: -2px; white-space: nowrap; background: var(--yellow); color: var(--on-accent, var(--ink)); padding: 6px 13px 7px; border-radius: 999px 999px 999px 4px;
+  text-transform: uppercase; letter-spacing: 0.1em; font-size: 13px; font-weight: 600; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3); transform: scale(0.6); transform-origin: 0 100%; transition: transform 0.45s var(--spring); }
+.mpin.is-on p { transform: none; }
+
+@media (max-width: 820px) {
+  .note.top { top: auto; bottom: calc(var(--pad) + 40px); }
+  .mapchip { top: 62px; font-size: 10px; gap: 8px; padding: 8px 13px; } .mapchip b { font-size: 15px; }
+  .mpin p { font-size: 10.5px; padding: 4px 9px; }
+  .copy.note.note-left .card-in { min-height: 115px; }      /* the three GONE WALKING captions are one height, so the card's top edge does not jump when they swap */
+  .mark { width: 58px; height: 58px; margin: -8px 0 -8px -2px; } .bar::before { height: 104px; }
+  .tabs { display: none; }      /* no room up here on a phone: the dots on the track do the job */
+  .rail::before { height: 66px; }      /* on a phone the cards sit just above the track, so its plate stays low and off them */
+  .filmbar { bottom: calc(var(--pad) + 142px); }      /* the film's buttons stand above the caption, not on it */
+  :is(.hudline, .end, .hero-line, .note:not(.note-left):not(.top)) { margin-bottom: 0; }
+  /* on a phone the four stops are dots you can tap, and only the one you are in keeps its name */
+  .stops a, .stops a:nth-child(odd) { font-size: 0; padding: 0; } .stops a::before { display: none; }
+  .stops a::after { left: -4px; bottom: -9px; width: 10px; height: 10px; } .stops a:nth-child(odd)::after { left: auto; right: -4px; }
+  .stops a.is-on { font-size: 9px; padding: 0 0 9px 9px; translate: 0 0; } .stops a.is-on::after { translate: 0 0; }
+  .stops a.is-on:nth-child(odd), .stops a.is-on:nth-child(4) { left: auto; right: calc(100% - var(--x)); padding: 0 9px 9px 0; } .stops a.is-on:nth-child(4)::after { left: auto; right: -4px; }
+  .hero:not(.hero-line) { bottom: 27vh; } .hero.hero-line { bottom: calc(var(--pad) + 46px); }
+  /* the phone on a phone: it stands upright in the top half, the notifications under it */
+  :root { --pbx: 0vw; --pby: -22vh; --pbs: 0.58; }
+  .pb-frame::after { left: 50%; top: 22px; width: 86px; height: 22px; margin: 0 0 0 -43px; }
+  .pb-side { left: var(--pad); right: var(--pad); width: auto; top: 50.5vh; translate: 0 0; }
+  .pb-h { font-size: 17px; margin-bottom: 8px; } .pb-list { gap: 6px; }
+  .pn { font-size: 12px; padding: 10px 13px 11px; border-radius: 17px; } .pn-t { font-size: 14.5px; margin-top: 5px; } .pn-b { font-size: 11px; }
+  body.pb-on .hudline { opacity: 0; }
+  /* the label on a phone: everything stacked, the barcode row flat under a rule */
+  .hero-line, .end { max-width: calc(100vw - 2 * var(--pad) - 18px); }
+  .lb-top { padding: 7px 70px 7px 12px; gap: 12px; font-size: 9.5px; letter-spacing: 0.08em; }
+  .lb-body { flex-direction: column; align-items: stretch; padding: 12px 13px 11px 12px; }
+  .lb-line { padding-right: 20px; }
+  .lb-row { flex-direction: row; align-items: center; gap: 10px; margin: 10px 0 0; padding: 9px 0 0; border-left: 0; border-top: 2px solid var(--ink); } .lb-bar { width: 62px; height: 20px; }
+  .lb-name { white-space: normal; padding-right: 44px; } .lb-stamp { align-self: flex-end; margin: 10px 0 0; font-size: 10px; padding: 5px 9px; }
+  .lb-price { width: 74px; height: 74px; font-size: 22px; right: -14px; top: -28px; }
+  .btn.btn-play { height: 58px; padding: 0 34px; } button.btn.btn-play { font-size: 18px; }
+  .note { bottom: calc(var(--pad) + 40px); } .note .card-in, .note-left .card-in { flex-direction: column; flex-wrap: nowrap; align-items: stretch; padding: 12px 16px 12px 54px; gap: 5px; border-radius: 16px; } .note p, .note.note-left p { min-width: 0; flex: none; }
+  .note .card-in > .eye, .note-left .card-in > .eye { left: 14px; top: 50%; margin-top: -14px; width: 28px; height: 28px; }
+  .note-left { left: 50%; right: auto; translate: -50% 0; top: auto; bottom: calc(var(--pad) + 40px); width: min(92vw, 62ch); }
+  .note h2 { font-size: 19px; white-space: normal; }
+  .vtag p, .vtag.flip p { white-space: normal; width: 56vw; left: calc(var(--s) / -2); right: auto; top: calc(var(--s) / 2 + 12px); } .vtag p::before { display: none; }      /* on a phone the label sits under its brackets, where there is room */ .vtag b { font-size: 18px; } .hud-b { display: none; }
+  .hudline { bottom: calc(var(--pad) + 40px); width: auto; text-align: left; }
+  .recap { top: 16%; translate: none; left: var(--pad); right: auto; text-align: left; max-width: none; font-size: 15vw; }
+  .callout { padding-left: 40px; white-space: normal; width: 44vw; }
+  .callout.is-on::after { width: 28px; }
+  .callout b { font-size: 15px; } .callout span { font-size: 10px; letter-spacing: 0.06em; }
+  .callout[data-dir="l"] { padding-right: 40px; }
+  .cta-row { gap: 10px; margin-top: 16px; }
+  .tag, .tag-wide { top: auto; bottom: calc(var(--pad) + 40px); translate: none; left: var(--pad) !important; right: auto !important; width: min(34ch, calc(100vw - 2 * var(--pad))); }
+  .tag .card-in { padding: 54px 18px 18px; border-radius: 18px; } .tag .card-in > .eye { left: 16px; top: 13px; width: 30px; height: 30px; } .tag .card-in > .rec { right: 16px; top: 22px; }
+  .tag h2 { font-size: 24px; }
+  dl div { padding: 5px 0; gap: 12px; } dd { font-size: 12px; }
+  .tag-wide .fine { display: none; }
+  .rail-name, .rail-hint { display: none; }
+  .btn { --bz: 4px; --ch: 30px; height: 40px; padding: 0 5px 0 15px; gap: 10px; font-size: 10px; } .btn__sep { margin: 0 7px; }
+  .btn-big { --bz: 5px; --ch: 42px; height: 54px; padding: 0 6px 0 22px; gap: 14px; font-size: 12px; }
+  .tag, .tag-wide, .note, .note-left { bottom: calc(var(--pad) + 52px); }      /* room for the name of the stop you are in, between the card and the track */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .copy, .btn, .swatches button, .mark, .mark img, .stops a, .stops a::before, .card-in, .brk { transition: none; }
+  .boot-seal .ring, .boot-seal .core, .boot-seal .brk { animation: none; } #loading.out { animation: bootBail 0.5s forwards; } #loading.out .boot-seal { animation: none; }
+  body.boxed .tabs a { animation: none; opacity: 1; translate: 0 0; } .tab__ch, .tabs a::before, .tabs a::after { transition: none; }
+  .card-in > *, .is-on > .card-in > * { opacity: 1; animation: none; } .is-on > .card-in::after, .eye .lid, .rec::before { animation: none; } .typed .ch { opacity: 1; }
+}
