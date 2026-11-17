@@ -1,5 +1,23 @@
 <!DOCTYPE html>
 <html lang="en"><head>
+<script id="threeui-perf-guard">
+(() => {
+  const soft = () => { try { const c=document.createElement('canvas'); const gl=c.getContext('webgl'); const i=gl&&gl.getExtension('WEBGL_debug_renderer_info'); const n=i?gl.getParameter(i.UNMASKED_RENDERER_WEBGL):''; return /swiftshader|llvmpipe|software/i.test(String(n)); } catch { return false; } };
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const softGpu = soft();
+  const cap = softGpu || reduced ? 1 : 1.5;
+  const desc = Object.getOwnPropertyDescriptor(window, 'devicePixelRatio');
+  try {
+    Object.defineProperty(window, 'devicePixelRatio', {
+      configurable: true,
+      get() { const raw = desc && desc.get ? desc.get.call(window) : (desc ? desc.value : 1); return Math.min(Number(raw)||1, cap); }
+    });
+  } catch {}
+  document.documentElement.dataset.threeuiSoftGpu = softGpu ? '1' : '0';
+  const pause = () => { document.documentElement.dataset.auraPreviewPaused = document.hidden ? 'true' : 'false'; };
+  document.addEventListener('visibilitychange', pause); pause();
+})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0B0C0E">

@@ -74,6 +74,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/three": "0.149.0",
     "@vitejs/plugin-react": "^5.1.1",
+    "playwright": "^1.49.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "three": "0.149.0",

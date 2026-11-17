@@ -35,13 +35,14 @@ document.documentElement.style.setProperty('--robot', PAL.robot);
 
 /* ---------- renderer, scene, light ---------- */
 const canvas = document.getElementById('world');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+const softGpu = (() => { try { const probe = document.createElement('canvas'); const gl = probe.getContext('webgl'); const info = gl && gl.getExtension('WEBGL_debug_renderer_info'); const rendererName = info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : ''; return /swiftshader|llvmpipe|software/i.test(String(rendererName)); } catch { return false; } })();
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !(coarse || softGpu), powerPreference: 'high-performance' });
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.08;
-renderer.shadowMap.enabled = true;
+renderer.shadowMap.enabled = !softGpu;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-const DPR = Math.min(devicePixelRatio, coarse ? 1.5 : 2);
+const DPR = Math.min(devicePixelRatio || 1, softGpu ? 1 : (coarse ? 1.25 : 1.5));
 renderer.setPixelRatio(DPR);
 
 const scene = new THREE.Scene();
@@ -53,8 +54,8 @@ const camera = new THREE.PerspectiveCamera(36, 1, 0.08, 160);
 const hemi = new THREE.HemisphereLight(0xeef2ff, 0xe9dcc8, 0.75); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffedd0, 2.5);
 const SUN_OFF = V3(-6, 11, 7), RIM_OFF = V3(7, 5, -9);
-sun.castShadow = true;
-sun.shadow.mapSize.setScalar(coarse ? 1024 : 2048);
+sun.castShadow = !softGpu;
+sun.shadow.mapSize.setScalar(softGpu ? 512 : (coarse ? 1024 : 1536));
 Object.assign(sun.shadow.camera, { left: -13, right: 13, top: 13, bottom: -13, near: 1, far: 44 });
 sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03; sun.shadow.radius = 5;
 scene.add(sun, sun.target);

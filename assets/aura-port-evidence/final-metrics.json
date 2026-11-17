@@ -1,0 +1,47 @@
+{
+  "redwing-landing-page": {
+    "packaged": 9.07,
+    "transfer": null,
+    "fpsD": 4.0,
+    "fpsM": 3.7,
+    "route": "/landing-pages/redwing/",
+    "aura": "https://www.aura.build/templates/redwing",
+    "issues": "SwiftShader FPS far below GPU target; cabin explore/globe subpages stubbed under budget"
+  },
+  "mosey-landing-page": {
+    "packaged": 6.79,
+    "transfer": 6.95,
+    "fpsD": 4.0,
+    "fpsM": 4.0,
+    "route": "/landing-pages/mosey/",
+    "aura": "https://www.aura.build/templates/mosey",
+    "issues": "SwiftShader FPS far below GPU target; physics-heavy scene"
+  },
+  "azura-yacht-landing-page": {
+    "packaged": 0.95,
+    "transfer": 1.68,
+    "fpsD": 3.7,
+    "fpsM": 3.7,
+    "route": "/landing-pages/azura-yacht.html",
+    "aura": "https://www.aura.build/templates/azura-yacht",
+    "issues": "SwiftShader FPS; CDN Three/GSAP counted in transfer"
+  },
+  "vanta-landing-page": {
+    "packaged": 0.8,
+    "transfer": 2.13,
+    "fpsD": 3.5,
+    "fpsM": 3.8,
+    "route": "/landing-pages/vanta-designed.html",
+    "aura": "https://www.aura.build/templates/vanta-designed",
+    "issues": "SwiftShader FPS; ESM CDN React/R3F counted in transfer"
+  },
+  "emberfall-landing-page": {
+    "packaged": 9.34,
+    "transfer": 9.45,
+    "fpsD": 2.7,
+    "fpsM": 4.8,
+    "route": "/landing-pages/emberfall/",
+    "aura": "https://www.aura.build/templates/emberfall",
+    "issues": "SwiftShader FPS; mobile/_m textures and rock NAO maps dropped for size; chapter MP4s replaced with WebM"
+  }
+}

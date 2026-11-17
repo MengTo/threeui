@@ -1,0 +1,72 @@
+[
+  {
+    "id": "redwing-landing-page",
+    "url": "/landing-pages/redwing/",
+    "label": "Red Wing",
+    "aura": "https://www.aura.build/templates/redwing",
+    "transferDesktopMB": 10.7,
+    "transferMobileMB": 10.7,
+    "fpsDesktop": 4,
+    "fpsMobile": 3.7,
+    "errsDesktop": [],
+    "errsMobile": [],
+    "failedDesktop": [],
+    "failedMobile": []
+  },
+  {
+    "id": "mosey-landing-page",
+    "url": "/landing-pages/mosey/",
+    "label": "Mosey",
+    "aura": "https://www.aura.build/templates/mosey",
+    "transferDesktopMB": 6.95,
+    "transferMobileMB": 6.95,
+    "fpsDesktop": 4,
+    "fpsMobile": 4,
+    "errsDesktop": [],
+    "errsMobile": [],
+    "failedDesktop": [],
+    "failedMobile": []
+  },
+  {
+    "id": "azura-yacht-landing-page",
+    "url": "/landing-pages/azura-yacht.html",
+    "label": "Azura Yacht",
+    "aura": "https://www.aura.build/templates/azura-yacht",
+    "transferDesktopMB": 1.68,
+    "transferMobileMB": 1.65,
+    "fpsDesktop": 3.7,
+    "fpsMobile": 3.7,
+    "errsDesktop": [],
+    "errsMobile": [],
+    "failedDesktop": [],
+    "failedMobile": []
+  },
+  {
+    "id": "vanta-landing-page",
+    "url": "/landing-pages/vanta-designed.html",
+    "label": "VANTA",
+    "aura": "https://www.aura.build/templates/vanta-designed",
+    "transferDesktopMB": 2.1,
+    "transferMobileMB": 2.13,
+    "fpsDesktop": 3.5,
+    "fpsMobile": 3.8,
+    "errsDesktop": [],
+    "errsMobile": [],
+    "failedDesktop": [],
+    "failedMobile": []
+  },
+  {
+    "id": "emberfall-landing-page",
+    "url": "/landing-pages/emberfall/",
+    "label": "Emberfall",
+    "aura": "https://www.aura.build/templates/emberfall",
+    "transferDesktopMB": 8.2,
+    "transferMobileMB": 9.45,
+    "fpsDesktop": 2.7,
+    "fpsMobile": 4.8,
+    "errsDesktop": [],
+    "errsMobile": [],
+    "failedDesktop": [],
+    "failedMobile": []
+  }
+]

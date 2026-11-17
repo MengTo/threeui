@@ -1,6 +1,10 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script type="importmap">
+{"imports":{"three":"./vendor/three/build/three.module.min.js","three/addons/":"./vendor/three/examples/jsm/"}}
+</script>
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Red Wing — the long-range private jet, in interactive 3D</title>
@@ -11,12 +15,8 @@
 <link rel="preload" href="vendor/fonts/switzer-300.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="vendor/fonts/switzer-400.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="vendor/fonts/switzer-500.woff2" as="font" type="font/woff2" crossorigin>
 <style>@font-face{font-family:'Switzer';src:url(vendor/fonts/switzer-300.woff2) format('woff2');font-weight:300;font-style:normal;font-display:swap}@font-face{font-family:'Switzer';src:url(vendor/fonts/switzer-400.woff2) format('woff2');font-weight:400;font-style:normal;font-display:swap}@font-face{font-family:'Switzer';src:url(vendor/fonts/switzer-500.woff2) format('woff2');font-weight:500;font-style:normal;font-display:swap}</style>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=JetBrains+Mono:wght@500&family=Unbounded:wght@500&family=Poppins:wght@700&family=Outfit:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Anton&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=JetBrains+Mono:wght@500&family=Unbounded:wght@500&family=Poppins:wght@700&family=Outfit:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Anton&display=swap" rel="stylesheet"></noscript>
-<link rel="modulepreload" href="vendor/three/build/three.module.min.js">
 <link rel="preload" href="assets/rw-ao-uv.bin" as="fetch" crossorigin="anonymous">
 <link rel="preload" href="assets/rw-map.webp" as="image" crossorigin="anonymous">
-<script type="importmap">
-{"imports":{"three":"./vendor/three/build/three.module.min.js","three/addons/":"./vendor/three/examples/jsm/"}}
-</script>
 <style>
 :root{
   --i:30,22,24;
@@ -1630,7 +1630,6 @@ main section#explore{display:none!important}
   #nav.deck.rw.on-hero .rw-g,#nav.deck.rw.on-hero .nav-logo b{text-shadow:0 1px 10px rgba(6,20,48,.35)}
 }
 </style>
-<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=switzer@600,700&display=swap">
 </head>
 <body>
 <script>window.JETLI_LAND=1;document.documentElement.classList.add('is-loading')</script>
@@ -3557,7 +3556,7 @@ const view = { w: 0, h: 0 };                       // size of the element the ca
 let DPR = 1;
 function resize() {
   const w = Math.max(2, view.w || window.innerWidth), h = Math.max(2, view.h || window.innerHeight);
-  DPR = Math.min(window.devicePixelRatio || 1, QS.has('dpr') ? +QS.get('dpr') : (w < 800 ? 2 : 1.75), view.cap || 9);
+  { let soft=false; try { const gl=renderer.getContext(); const info=gl&&gl.getExtension('WEBGL_debug_renderer_info'); const name=info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):''; soft=/swiftshader|llvmpipe|software/i.test(String(name)); } catch(e){} DPR = Math.min(window.devicePixelRatio || 1, QS.has('dpr') ? +QS.get('dpr') : (soft ? 1 : (w < 800 ? 1.5 : 1.5)), soft ? 1 : (view.cap || 9)); }
   renderer.setPixelRatio(DPR); renderer.setSize(w, h, false); composer.setPixelRatio(DPR); composer.setSize(w, h); composerO.setPixelRatio(DPR); composerO.setSize(w, h);
   camera.aspect = w / h; camera.updateProjectionMatrix();
   const mo = xr.getObjectByName('motes'); if (mo) mo.material.uniforms.uPx.value = h * DPR / 900;
