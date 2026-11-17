@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta property="og:title" content="Mosey. The small AI companion for your home.">
+<meta property="og:image" content="media/og.webp">
+<title>Mosey. The small AI companion for your home.</title>
+<meta name="description" content="Mosey is a 14 cm AI companion that walks around your home. Ask it anything, from homework to dinner. It finds what you lost, keeps an eye on things while you're out, and you can steer it from your phone. First Edition, $149.">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three.module.js",
+  "three/addons/": "./vendor/addons/",
+  "rapier": "./vendor/rapier.es.js"
+} }
+</script>
+</head>
+<body>
+<canvas id="world" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="bar">
+  <a class="mark" href="#top" data-go="0" aria-label="Good Company, back to the top">
+    <img class="ring ink" src="media/logo/good-company-seal-ring-ink.webp" alt="" draggable="false"><img class="ring paper" src="media/logo/good-company-seal-ring-paper.webp" alt="" draggable="false">
+    <img class="ink" src="media/logo/good-company-seal-core-ink.webp" alt="" draggable="false"><img class="paper" src="media/logo/good-company-seal-core-paper.webp" alt="" draggable="false">
+  </a>
+  <!-- a quiet row of links. It is not there at first: once the box has landed on the headline, each one falls into place -->
+  <nav class="tabs" aria-label="Sections">
+    <a href="#does" data-go="talk">What it does</a>
+    <a href="#life" data-go="dive+2">What it sees</a>
+    <a href="#specs" data-go="plinth+2">Specs</a>
+    <a href="#colours" data-go="gate+3">Colours</a>
+  </nav>
+  <a class="btn" href="#reserve" data-go="end">Reserve <span class="btn-price">$149</span></a>
+</header>
+
+<footer class="rail">
+  <span class="rail-count" aria-hidden="true"><b id="stopnum">01</b><i>/ 12</i></span>
+  <span class="rail-name" id="stopname" aria-hidden="true">Out of the box</span>
+  <span class="rail-line"><i id="railfill" aria-hidden="true"></i><span class="rail-ticks" id="railticks" aria-hidden="true"></span><em class="rail-bot" id="railbot" aria-hidden="true"><s></s></em>
+    <!-- the page's links stand on the track, each where its stop is on the walk -->
+    <nav class="stops" aria-label="Stops on the track">
+      <a href="#does" data-go="talk">What it does</a>
+      <a href="#life" data-go="dive+2">What it sees</a>
+      <a href="#specs" data-go="plinth+2">Specs</a>
+      <a href="#colours" data-go="gate+3">Colours</a>
+    </nav>
+  </span>
+  <span class="rail-hint is-off" id="hint" aria-hidden="true">Scroll to walk</span>
+</footer>
+
+<div class="mapchip" id="mapchip" aria-hidden="true"><span>Mapping your home</span><b>0 m²</b></div>
+<div id="mappins" aria-hidden="true"></div>
+
+<main id="top">
+  <section data-stop="hero" data-name="Out of the box">
+    <div class="copy hero" data-d0="0" data-d1="0.2" data-side="none">
+      <h1 class="sr">Meet Mosey.</h1>
+      <button class="btn btn-big btn-play" id="unbox" type="button">Press</button>
+    </div>
+    <div class="copy hero hero-line" data-d0="0.25" data-d1="peeked-1.1" data-side="none">
+      <!-- a shipping label, like the one on the box: slapped on once the box has landed, then the price is stamped on it -->
+      <div class="lb">
+        <i class="lb-tape" aria-hidden="true"></i>
+        <div class="lb-top"><span>Good Company</span><span>First Edition</span></div>
+        <div class="lb-body">
+          <p class="lb-line">The small, smart AI companion for the whole family.</p>
+          <div class="lb-row"><i class="lb-bar" aria-hidden="true"></i><span>500 robots</span></div>
+        </div>
+        <b class="lb-price"><small>only</small>$149</b>
+      </div>
+    </div>
+  </section>
+
+  <section data-stop="hello" data-name="Its first film">
+    <div class="copy note" data-d0="present0+0.9" data-d1="present0+2.4" data-side="none">
+      <h2>Its lens is a projector.</h2>
+      <p>40 inches on any wall. This is Mosey, introducing&nbsp;itself.</p>
+    </div>
+  </section>
+
+  <section data-stop="lights" data-name="Lights out">
+    <div class="copy tag" data-d0="slap0+1.7" data-d1="slapEnd+0.2" data-side="left">
+      <p class="tag-no">Runs the house</p>
+      <h2>“Mosey, lights out.”</h2>
+      <p>It switches your lamps, plugs and blinds. Say it, tap it on your phone, or let it do the rounds at bedtime.</p>
+      <ul class="chips"><li>Works with Matter</li><li>No hub</li><li>Phone app</li></ul>
+    </div>
+  </section>
+
+  <section data-stop="headline" data-name="Gone walking">
+    <div class="copy note note-left" data-d0="onG+0.6" data-d1="gap+1.3" data-side="none">
+      <h2>First walk: it maps your home.</h2>
+      <p>A small model of every room, every rug, and where the sun lands at four.</p>
+    </div>
+    <div class="copy note note-left" data-d0="gap+1.7" data-d1="tip-0.75" data-side="none">
+      <h2>So it never has to ask where.</h2>
+      <p>The map is how it finds your keys, checks the stove and knows what's whose.</p>
+    </div>
+    <div class="copy note note-left" data-d0="tip-0.6" data-d1="tip+3.9" data-side="none">
+      <h2>Map saved.</h2>
+      <p>Five rooms, 62 square metres. It only has to do this once.</p>
+    </div>
+    <div class="copy note note-left" data-d0="tip+5.7" data-d1="tipEnd+0.3" data-side="none">
+      <h2>Dock's that way.</h2>
+      <p>Low on battery, it follows the dots home by itself.</p>
+    </div>
+  </section>
+
+  <section data-stop="talks" data-name="It talks" id="does">
+    <div class="copy tag" data-d0="talk-0.4" data-d1="talkEnd-0.5" data-side="left">
+      <p class="tag-no">Skill 1 of 3 · It talks</p>
+      <h2>Go on, ask it anything.</h2>
+      <p>Homework, dinner, why the sky is blue. It answers out loud, as patiently the fifth time as the first, and remembers what you told it last week.</p>
+      <div class="thumbs asks" role="group" aria-label="Ask Mosey">
+        <button data-q="0">Pasta timer?</button><button data-q="1">What's 7 × 8?</button><button data-q="2">Tell me a joke</button>
+      </div>
+      <ul class="chips"><li>Good with kids</li><li>12 languages</li><li>Works with the wifi off</li></ul>
+    </div>
+    <div class="copy note" data-d0="dive0+0.3" data-d1="dive-2.0" data-side="none">
+      <h2>Skill 2 of 3 · It sees.</h2>
+      <p>Keep scrolling to look through its lens. Move your cursor to look around.</p>
+    </div>
+    <p class="copy hudline" data-d0="dive+0.5" data-d1="sock+2.5" data-side="none">Your home, from 14 cm up.</p>
+    <p class="copy hudline" data-d0="sofa-4" data-d1="sofaEnd+0.6" data-side="none">It fits under the sofa. That's where keys go.</p>
+    <p class="copy hudline" data-d0="cat-2" data-d1="stoveEnd+0.2" data-side="none">While you're out, it does the rounds. Look in from your phone.</p>
+    <div class="copy tag" data-d0="nap+0.3" data-d1="napEnd-0.2" data-side="left">
+      <p class="tag-no">And then</p>
+      <h2>It charges itself.</h2>
+      <p>Low battery, it finds its dock and naps for 50 minutes. Walk in and it wakes up.</p>
+    </div>
+  </section>
+
+  <section data-stop="sees" data-name="It sees"></section>
+  <section data-stop="charge" data-name="It charges"></section>
+
+  <section data-stop="life" data-name="It projects" id="life">
+    <div class="copy tag" data-d0="photo+0.5" data-d1="photoEnd+0.2" data-side="right">
+      <p class="tag-no">Skill 3 of 3 · It projects</p>
+      <h2>Any wall is a screen.</h2>
+      <p>40 inches, wherever it's standing. The recipe while you cook, a film on the bedroom wall, stars on the ceiling when the kids won't sleep.</p>
+      <div class="thumbs" role="group" aria-label="What Mosey projects">
+        <button data-slot="0">Recipe</button><button data-slot="1">▶ Film</button><button data-slot="2">Photos</button><button data-slot="3">Stars</button>
+      </div>
+    </div>
+  </section>
+
+  <section data-stop="details" data-name="Specs" id="specs">
+    <div class="copy tag tag-wide" data-d0="plinth+0.6" data-d1="plinthEnd-0.4" data-side="right">
+      <p class="tag-no">Specs</p>
+      <h2>Small, on purpose.</h2>
+      <dl>
+        <div><dt>Size</dt><dd>14 cm, 310 g</dd></div>
+        <div><dt>Battery</dt><dd>6 h walking, 50 min charge</dd></div>
+        <div><dt>Brain</dt><dd>On-device AI, works offline</dd></div>
+        <div><dt>Lens</dt><dd>Camera and 40 inch projector</dd></div>
+        <div><dt>Privacy</dt><dd>Nothing leaves your home</dd></div>
+        <div><dt>Phone</dt><dd>Steer it and look in, iOS and Android</dd></div>
+        <div><dt>In the box</dt><dd>Mosey, dock, USB-C cable</dd></div>
+        <div><dt>Mosey XL</dt><dd>22 cm, 12 h walking, 80 inch projector</dd></div>
+      </dl>
+      <p class="fine drag">↔ Drag to turn it</p>
+    </div>
+  </section>
+
+  <section data-stop="family" data-name="Colours" id="colours">
+    <div class="copy tag" data-d0="gate+1.9" data-d1="price-2.4" data-side="right">
+      <p class="tag-no">Sizes and colours</p>
+      <h2>Two sizes. Four moods.</h2>
+      <div class="size-sw" role="group" aria-label="Size">
+        <button type="button" class="is-on" data-size="base" aria-pressed="true"><b>Mosey</b><span>$149</span></button>
+        <button type="button" data-size="xl" aria-pressed="false"><b>Mosey XL</b><span>$249</span></button>
+      </div>
+      <p class="size-line" id="sizeline">14 cm. Walks 6 hours. Puts 40 inches on a wall.</p>
+      <div class="swatches" role="group" aria-label="Colour">
+        <button data-way="classic" class="is-on" style="--c:var(--robot, #F6C21A)" aria-label="Classic"></button>
+        <button data-way="tomato" style="--c:#E8452C" aria-label="Tomato"></button>
+        <button data-way="mint" style="--c:#8FD3B6" aria-label="Mint"></button>
+        <button data-way="night" style="--c:#2A2A31" aria-label="Night"></button>
+      </div>
+      <p class="wayname"><span id="wayname">Classic</span> · in stock for the First Edition</p>
+      <a class="btn btn-big" href="#reserve" data-go="end">Reserve this one</a>
+    </div>
+  </section>
+
+  <section data-stop="price" data-name="Price">
+    <div class="copy tag" data-d0="shove-3.5" data-d1="shove+0.5" data-side="left">
+      <p class="tag-no">Price</p>
+      <h2>One price. Nothing monthly.</h2>
+      <ul class="ticks">
+        <li>The AI and the app are included, no subscription</li>
+        <li>Free shipping, 30 days to send it back</li>
+        <li>Two years of repairs</li>
+      </ul>
+    </div>
+  </section>
+
+  <section data-stop="edge" data-name="Reserve" id="reserve">
+    <p class="copy recap" data-d0="lip+3.5" data-d1="lip+5.0" data-side="none">It talks.</p>
+    <p class="copy recap" data-d0="lip+5.3" data-d1="lip+6.9" data-side="none">It finds.</p>
+    <p class="copy recap" data-d0="lip+7.2" data-d1="lip+8.8" data-side="none">It keeps watch.</p>
+    <p class="copy recap" data-d0="lip+9.1" data-d1="land-1.7" data-side="none">And it's $149.</p>
+    <div class="copy end" data-d0="land+1.2" data-d1="end+99" data-side="none">
+      <h2 class="sr">Gone walking.</h2>
+      <div class="lb lb-end">
+        <i class="lb-tape" aria-hidden="true"></i>
+        <div class="lb-top"><span>Reserve</span><span>No. 001 / 500</span></div>
+        <div class="lb-body">
+          <div><p class="lb-name">Mosey, First Edition.</p><p class="lb-fine">Press the big button. Good Company is made up, so nothing will happen. Yet.</p></div>
+          <span class="lb-stamp">or $20 today</span>
+        </div>
+        <b class="lb-price"><small>only</small>$149</b>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="callouts" aria-hidden="true">
+  <div class="callout" data-dir="l" data-anchor="-0.25,0.98,0" data-d0="plinth+1.2" data-d1="plinthEnd-0.4"><b>14 cm</b><span>Fits under a sofa</span></div>
+  <div class="callout" data-dir="l" data-anchor="-0.2,0.42,0.05" data-d0="plinth+2.4" data-d1="plinthEnd-0.4"><b>No. 001</b><span>Every one is numbered</span></div>
+  <div class="callout" data-dir="l" data-anchor="-0.12,0.05,0.1" data-d0="plinth+3.6" data-d1="plinthEnd-0.4"><b>Soft feet</b><span>Quiet on wood floors</span></div>
+</div>
+<div id="iris" aria-hidden="true"></div>
+<div class="filmbar" id="filmbar"><button id="filmsound" type="button" aria-pressed="true">Sound on</button><a class="btn" id="skipfilm" href="#top">Skip film</a></div>
+<div id="hud" aria-hidden="true"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i><span class="hud-a">● Mosey vision</span><span class="hud-b">14 cm · 08:41 · 82%</span><span class="reticle"></span></div>
+<div id="toast" role="status"></div>
+
+<!-- the loader: the Good Company seal on a dark screen, a ring that fills as the page boots, and the page opens through its lens. js/loader.js runs it -->
+<div id="loading" role="status" aria-live="polite">
+  <div class="boot-seal" aria-hidden="true">
+    <svg viewBox="0 0 36 36"><circle class="bg" cx="18" cy="18" r="15.915"/><circle class="fg" cx="18" cy="18" r="15.915" pathLength="100"/></svg>
+    <img class="ring" src="media/logo/good-company-seal-ring-paper.webp" alt=""><img class="core" src="media/logo/good-company-seal-core-paper.webp" alt="">
+    <i class="brk a"></i><i class="brk b"></i><i class="brk c"></i><i class="brk d"></i>
+  </div>
+  <p class="boot-line"><span id="bootsay">Waking Mosey</span> · <b id="bootpct">0%</b></p>
+</div>
+<script src="js/loader.js"></script>
+<script type="module" src="js/buttons.js"></script>
+<script type="module" src="js/main.js"></script>
+<script type="module" src="js/cards.js"></script>
+<script type="module" src="js/hero-fx.js"></script>
+<script type="module" src="js/phone.js"></script>      <!-- at the stove the picture pulls back: it was on your phone -->
+<script type="module" src="js/sound.js"></script>      <!-- the sound of the walk, made as you scroll. It starts with PRESS -->
+</body>
+</html>

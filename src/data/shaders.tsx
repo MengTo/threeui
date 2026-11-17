@@ -4,6 +4,11 @@ const CommunityRenderer2 = lazy(() => import("../shaders/landing-pages/LandingPa
 const CommunityRenderer3 = lazy(() => import("../shaders/landing-pages/LandingPages").then((module) => ({ default: module.BestsellersBookShowcase })));
 const CommunityRenderer4 = lazy(() => import("../shaders/landing-pages/LandingPages").then((module) => ({ default: module.SylvaHero })));
 const CommunityRenderer5 = lazy(() => import("../shaders/landing-pages/LandingPages").then((module) => ({ default: module.MengToSketchbookLandingPage })));
+const CommunityRenderer103 = lazy(() => import("../shaders/landing-pages/LandingPages").then((module) => ({ default: module.RedWingLandingPage })));
+const CommunityRenderer104 = lazy(() => import("../shaders/landing-pages/LandingPages").then((module) => ({ default: module.MoseyLandingPage })));
+const CommunityRenderer105 = lazy(() => import("../shaders/landing-pages/LandingPages").then((module) => ({ default: module.AzuraYachtLandingPage })));
+const CommunityRenderer106 = lazy(() => import("../shaders/landing-pages/LandingPages").then((module) => ({ default: module.VantaLandingPage })));
+const CommunityRenderer107 = lazy(() => import("../shaders/landing-pages/LandingPages").then((module) => ({ default: module.EmberfallLandingPage })));
 import { PredictiveArcCanvas as CommunityRenderer6 } from "../shaders/predictive-arc/PredictiveArcCollection";
 import { LiquidFormBackground as CommunityRenderer7 } from "../shaders/liquid-form/LiquidFormBackground";
 const CommunityRenderer8 = lazy(() => import("../shaders/crt/CrtBackground").then((module) => ({ default: module.CrtBackground })));
@@ -1305,6 +1310,307 @@ export const READY_SHADERS: readonly ReadyShader[] = [
       }
     ]
   }, component: CommunityRenderer5 },
+  { ...{
+  "id": "redwing-landing-page",
+  "tags": [
+    "landing page",
+    "full html",
+    "website",
+    "aviation",
+    "threejs",
+    "three.js",
+    "3d",
+    "webgl",
+    "scroll",
+    "cinematic",
+    "interactive",
+    "responsive"
+  ],
+  "category": "Landing Pages",
+  "label": "Red Wing",
+  "thumbnail": "https://threeui.com/thumbnails/redwing-landing-page.jpg",
+  "description": "A cinematic private-aviation landing page with a scroll-driven Three.js long-range jet, cabin storytelling, and charter CTAs, ported from the Aura featured template.",
+  "runtime": "Full HTML + DOM/CSS + Three.js",
+  "origin": "Aura.build featured template (public share)",
+  "sourceCommit": "SHA-256 c81c3fa51ae0",
+  "sourceFiles": [
+    "src/shaders/landing-pages/LandingPages.tsx",
+    "landing-pages/redwing/index.html \u2014 complete page",
+    "public/landing-pages/redwing/ \u2014 52 local files"
+  ],
+  "passes": "1 sandboxed full-document renderer",
+  "interaction": "Original pointer, scroll, and responsive layout",
+  "asset": "Local jet mesh buffers, cabin materials, editorial photography, compressed hero scrub video, and vendored Three.js",
+  "assetCount": 52,
+  "importName": "RedWingLandingPage",
+  "controls": [],
+  "contract": [
+    {
+      "name": "document",
+      "type": "fixed",
+      "value": "Complete packaged /landing-pages/redwing/index.html"
+    },
+    {
+      "name": "sourceUrl",
+      "type": "fixed",
+      "value": "/landing-pages/redwing/index.html"
+    },
+    {
+      "name": "layout",
+      "type": "responsive",
+      "value": "Original full landing page inside the preview frame"
+    },
+    {
+      "name": "interaction",
+      "type": "original",
+      "value": "Scroll + pointer"
+    },
+    {
+      "name": "assets",
+      "type": "local",
+      "value": "Packaged beside the document; heavy media compressed under 10 MB"
+    }
+  ]
+}, component: CommunityRenderer103 },
+  { ...{
+  "id": "mosey-landing-page",
+  "tags": [
+    "landing page",
+    "full html",
+    "3d",
+    "threejs",
+    "webgl",
+    "robot",
+    "ai companion",
+    "scroll",
+    "interactive",
+    "product launch",
+    "physics"
+  ],
+  "category": "Landing Pages",
+  "label": "Mosey",
+  "thumbnail": "https://threeui.com/thumbnails/mosey-landing-page.jpg",
+  "description": "A scroll-driven 3D product page where Mosey, a small home robot, walks you through its features with physics, sound, and playful scrollytelling.",
+  "runtime": "Full HTML + DOM/CSS + Three.js + Rapier",
+  "origin": "Aura.build featured template (public share)",
+  "sourceCommit": "SHA-256 86426da835a8",
+  "sourceFiles": [
+    "src/shaders/landing-pages/LandingPages.tsx",
+    "landing-pages/mosey/index.html \u2014 complete page",
+    "public/landing-pages/mosey/ \u2014 49 local files"
+  ],
+  "passes": "1 sandboxed full-document renderer",
+  "interaction": "Original pointer, scroll, and responsive layout",
+  "asset": "Local Mosey GLB, photography, logo seals, audio cues, Rapier, and Three.js runtime",
+  "assetCount": 49,
+  "importName": "MoseyLandingPage",
+  "controls": [],
+  "contract": [
+    {
+      "name": "document",
+      "type": "fixed",
+      "value": "Complete packaged /landing-pages/mosey/index.html"
+    },
+    {
+      "name": "sourceUrl",
+      "type": "fixed",
+      "value": "/landing-pages/mosey/index.html"
+    },
+    {
+      "name": "layout",
+      "type": "responsive",
+      "value": "Original full landing page inside the preview frame"
+    },
+    {
+      "name": "interaction",
+      "type": "original",
+      "value": "Scroll + pointer"
+    },
+    {
+      "name": "assets",
+      "type": "local",
+      "value": "Packaged beside the document; heavy media compressed under 10 MB"
+    }
+  ]
+}, component: CommunityRenderer104 },
+  { ...{
+  "id": "azura-yacht-landing-page",
+  "tags": [
+    "landing page",
+    "full html",
+    "yacht",
+    "travel",
+    "threejs",
+    "3d",
+    "webgl",
+    "scroll",
+    "cinematic",
+    "interactive"
+  ],
+  "category": "Landing Pages",
+  "label": "Azura Yacht",
+  "thumbnail": "https://threeui.com/thumbnails/azura-yacht-landing-page.jpg",
+  "description": "An immersive yacht-charter landing page with interactive 3D deck plans, day/sunset/night lighting, and cinematic scroll storytelling.",
+  "runtime": "Full HTML + DOM/CSS + Three.js + GSAP",
+  "origin": "Aura.build featured template (public share)",
+  "sourceCommit": "SHA-256 6f2db87da904",
+  "sourceFiles": [
+    "src/shaders/landing-pages/LandingPages.tsx",
+    "public/landing-pages/azura-yacht.html \u2014 complete page"
+  ],
+  "passes": "1 sandboxed full-document renderer",
+  "interaction": "Original pointer, scroll, and responsive layout",
+  "asset": "Self-contained authored HTML with procedural Three.js decks and CDN GSAP/Three runtimes",
+  "assetCount": 1,
+  "importName": "AzuraYachtLandingPage",
+  "controls": [],
+  "contract": [
+    {
+      "name": "document",
+      "type": "fixed",
+      "value": "Complete packaged /landing-pages/azura-yacht.html"
+    },
+    {
+      "name": "sourceUrl",
+      "type": "fixed",
+      "value": "/landing-pages/azura-yacht.html"
+    },
+    {
+      "name": "layout",
+      "type": "responsive",
+      "value": "Original full landing page inside the preview frame"
+    },
+    {
+      "name": "interaction",
+      "type": "original",
+      "value": "Scroll + pointer"
+    },
+    {
+      "name": "assets",
+      "type": "local",
+      "value": "Packaged beside the document; heavy media compressed under 10 MB"
+    }
+  ]
+}, component: CommunityRenderer105 },
+  { ...{
+  "id": "vanta-landing-page",
+  "tags": [
+    "landing page",
+    "full html",
+    "motorcycle",
+    "product",
+    "threejs",
+    "r3f",
+    "3d",
+    "webgl",
+    "configurator",
+    "futuristic"
+  ],
+  "category": "Landing Pages",
+  "label": "VANTA",
+  "thumbnail": "https://threeui.com/thumbnails/vanta-landing-page.jpg",
+  "description": "An interactive electric-motorcycle concept page with scroll-driven camera paths, exploded engineering views, and a real-time finish configurator.",
+  "runtime": "Full HTML + DOM/CSS + React Three Fiber",
+  "origin": "Aura.build featured template (public share)",
+  "sourceCommit": "SHA-256 e8113b7d8a12",
+  "sourceFiles": [
+    "src/shaders/landing-pages/LandingPages.tsx",
+    "public/landing-pages/vanta-designed.html \u2014 complete page"
+  ],
+  "passes": "1 sandboxed full-document renderer",
+  "interaction": "Original pointer, scroll, and responsive layout",
+  "asset": "Self-contained authored HTML with procedural motorcycle scene and ESM CDN runtimes",
+  "assetCount": 1,
+  "importName": "VantaLandingPage",
+  "controls": [],
+  "contract": [
+    {
+      "name": "document",
+      "type": "fixed",
+      "value": "Complete packaged /landing-pages/vanta-designed.html"
+    },
+    {
+      "name": "sourceUrl",
+      "type": "fixed",
+      "value": "/landing-pages/vanta-designed.html"
+    },
+    {
+      "name": "layout",
+      "type": "responsive",
+      "value": "Original full landing page inside the preview frame"
+    },
+    {
+      "name": "interaction",
+      "type": "original",
+      "value": "Scroll + pointer"
+    },
+    {
+      "name": "assets",
+      "type": "local",
+      "value": "Packaged beside the document; heavy media compressed under 10 MB"
+    }
+  ]
+}, component: CommunityRenderer106 },
+  { ...{
+  "id": "emberfall-landing-page",
+  "tags": [
+    "landing page",
+    "full html",
+    "game",
+    "fantasy",
+    "threejs",
+    "3d",
+    "webgl",
+    "scroll",
+    "cinematic",
+    "interactive"
+  ],
+  "category": "Landing Pages",
+  "label": "Emberfall",
+  "thumbnail": "https://threeui.com/thumbnails/emberfall-landing-page.jpg",
+  "description": "A dark-fantasy action RPG landing page with scroll chapters, hero select, compressed local WebGL assets, and cinematic CTAs.",
+  "runtime": "Full HTML + DOM/CSS + Three.js + GSAP + Lenis",
+  "origin": "Aura.build featured template (public share)",
+  "sourceCommit": "SHA-256 c5802a2e0feb",
+  "sourceFiles": [
+    "src/shaders/landing-pages/LandingPages.tsx",
+    "landing-pages/emberfall/index.html \u2014 complete page",
+    "public/landing-pages/emberfall/ \u2014 89 local files"
+  ],
+  "passes": "1 sandboxed full-document renderer",
+  "interaction": "Original pointer, scroll, and responsive layout",
+  "asset": "Local compressed hero GLBs, chapter media, journey textures, and scene props",
+  "assetCount": 89,
+  "importName": "EmberfallLandingPage",
+  "controls": [],
+  "contract": [
+    {
+      "name": "document",
+      "type": "fixed",
+      "value": "Complete packaged /landing-pages/emberfall/index.html"
+    },
+    {
+      "name": "sourceUrl",
+      "type": "fixed",
+      "value": "/landing-pages/emberfall/index.html"
+    },
+    {
+      "name": "layout",
+      "type": "responsive",
+      "value": "Original full landing page inside the preview frame"
+    },
+    {
+      "name": "interaction",
+      "type": "original",
+      "value": "Scroll + pointer"
+    },
+    {
+      "name": "assets",
+      "type": "local",
+      "value": "Packaged beside the document; heavy media compressed under 10 MB"
+    }
+  ]
+}, component: CommunityRenderer107 },
   { ...{
     "id": "predictive-arc",
     "tags": [

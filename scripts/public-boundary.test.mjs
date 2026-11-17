@@ -177,7 +177,7 @@ test("mixed-access renderers expose only their Community option", async () => {
   }
 
   const landingPages = await readFile(join(root, "src/shaders/landing-pages/LandingPages.tsx"), "utf8");
-  assert.equal((landingPages.match(/export function /g) ?? []).length, 6, "landing pages should export the frame and five Community pages");
+  assert.equal((landingPages.match(/export function /g) ?? []).length, 11, "landing pages should export the frame and ten Community pages");
 });
 
 test("the public shell keeps the main UI but has no auth or private catalog runtime", async () => {

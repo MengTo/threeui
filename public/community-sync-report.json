@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-31T16:05:46.996Z",
+  "generatedAt": "2026-11-17T11:18:11.299126+00:00",
   "sourceCommit": "6b65f2dbec22ac58c56474f028aec5590e62d3c9",
-  "communityParents": 43,
-  "communityRoutes": 104,
+  "communityParents": 48,
+  "communityRoutes": 109,
   "communityVariants": 163,
   "excludedProParents": 108,
   "excludedBetaParents": 23,
@@ -1185,6 +1185,36 @@
         "linkedin": [],
         "email": []
       }
+    },
+    {
+      "id": "redwing-landing-page",
+      "variantIds": [],
+      "controlKeys": [],
+      "variantControlKeys": {}
+    },
+    {
+      "id": "mosey-landing-page",
+      "variantIds": [],
+      "controlKeys": [],
+      "variantControlKeys": {}
+    },
+    {
+      "id": "azura-yacht-landing-page",
+      "variantIds": [],
+      "controlKeys": [],
+      "variantControlKeys": {}
+    },
+    {
+      "id": "vanta-landing-page",
+      "variantIds": [],
+      "controlKeys": [],
+      "variantControlKeys": {}
+    },
+    {
+      "id": "emberfall-landing-page",
+      "variantIds": [],
+      "controlKeys": [],
+      "variantControlKeys": {}
     }
   ]
 }

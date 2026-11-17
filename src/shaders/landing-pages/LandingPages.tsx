@@ -26,3 +26,8 @@ export function CompleteShelfLandingPage(props: LandingPageProps & PageTypograph
 export function BestsellersBookShowcase(props: LandingPageProps & PageTypographyProps) { return <TypographyPage {...props} recipe={BESTSELLERS_TYPOGRAPHY} title="Field Manuals — Tools for Thought" sourceUrl="/landing-pages/bestsellers-book-showcase.html" />; }
 export function MengToSketchbookLandingPage(props: LandingPageProps) { return <LandingPageFrame {...props} title="Meng To — Singapore Sketchbook" sourceUrl="/landing-pages/meng-to-sketchbook.html" />; }
 export function SylvaHero(props: LandingPageProps & PageTypographyProps) { return <TypographyPage {...props} recipe={SYLVA_TYPOGRAPHY} title="Sylva — Into the living world" sourceUrl="/landing-pages/inner-green-3d.html" />; }
+export function RedWingLandingPage(props: LandingPageProps) { return <LandingPageFrame {...props} title="Red Wing · Private Aviation" sourceUrl="/landing-pages/redwing/index.html" />; }
+export function MoseyLandingPage(props: LandingPageProps) { return <LandingPageFrame {...props} title="Mosey AI Smart Home Companion" sourceUrl="/landing-pages/mosey/index.html" />; }
+export function AzuraYachtLandingPage(props: LandingPageProps) { return <LandingPageFrame {...props} title="AZURA — Beyond the Horizon" sourceUrl="/landing-pages/azura-yacht.html" />; }
+export function VantaLandingPage(props: LandingPageProps) { return <LandingPageFrame {...props} title="VANTA Electric Motorcycle Concept" sourceUrl="/landing-pages/vanta-designed.html" />; }
+export function EmberfallLandingPage(props: LandingPageProps) { return <LandingPageFrame {...props} title="Emberfall — Begin the Hunt" sourceUrl="/landing-pages/emberfall/index.html" />; }

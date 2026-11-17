@@ -1,0 +1,53 @@
+/* Button options, picked with ?btn=. Each one only restyles .btn, the markup is the same. */
+
+/* 01 Keycap: a keyboard key. Square shoulders, a deep throw, a lighter top face. */
+body[data-btn="keycap"] .btn {
+  border-radius: 13px; --drop: 8px; --base: #000;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 82%, #fff) 0%, var(--ink) 58%);
+  padding: 15px 15px 15px 20px; font-weight: 600;
+  box-shadow: 0 var(--drop) 0 var(--base), 0 calc(var(--drop) + 10px) 18px rgba(30, 20, 5, 0.28), inset 0 2px 0 rgba(255, 255, 255, 0.32), inset 0 0 0 1.5px rgba(255, 255, 255, 0.08);
+}
+body[data-btn="keycap"] .btn:hover { --drop: 11px; }
+body[data-btn="keycap"] .btn:active { --drop: 1px; }
+body[data-btn="keycap"] .btn-price { border-radius: 7px; padding: 5px 9px; }
+body[data-btn="keycap"] .btn-ghost { background: linear-gradient(180deg, #fff 0%, var(--paper) 60%); }
+body[data-btn="keycap"] .btn-light { background: linear-gradient(180deg, #fff 0%, #eef0fb 60%); }
+
+/* 02 Slide: a round knob with an arrow. Hover and the knob travels across, like sliding to unlock. */
+body[data-btn="slide"] .btn {
+  --drop: 3px; padding: 0 22px 0 60px; height: 50px; gap: 10px;
+  transition: transform 0.16s var(--out), box-shadow 0.16s var(--out), padding 0.4s var(--spring);
+}
+body[data-btn="slide"] .btn-big { height: 58px; padding: 0 26px 0 68px; }
+body[data-btn="slide"] .btn::before {
+  content: "→"; position: absolute; left: 6px; top: 6px; bottom: 6px; aspect-ratio: 1; border-radius: 50%;
+  display: grid; place-items: center; font-size: 17px; letter-spacing: 0;
+  background: var(--yellow); color: var(--on-accent, var(--ink));
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.45), 0 2px 5px rgba(0, 0, 0, 0.3);
+  transition: left 0.45s var(--spring), transform 0.45s var(--spring);
+}
+body[data-btn="slide"] .btn:hover { padding: 0 60px 0 22px; --drop: 3px; }
+body[data-btn="slide"] .btn-big:hover { padding: 0 68px 0 26px; }
+body[data-btn="slide"] .btn:hover::before { left: calc(100% - 6px); transform: translateX(-100%) rotate(360deg); }
+body[data-btn="slide"] .btn:active { --drop: 0px; }
+body[data-btn="slide"] .btn-price { background: none; box-shadow: none; padding: 0; color: inherit; opacity: 0.75; }
+
+/* 03 Arcade: a plate with a big dome button on it. The dome is what you press. */
+body[data-btn="arcade"] .btn {
+  --cap: var(--paper); --base: color-mix(in srgb, var(--ink) 30%, var(--paper)); --drop: 4px;
+  color: var(--ink); border-radius: 16px; padding: 12px 16px 12px 68px;
+  box-shadow: 0 var(--drop) 0 var(--base), 0 calc(var(--drop) + 8px) 16px rgba(30, 20, 5, 0.22), inset 0 0 0 1.5px var(--ink);
+}
+body[data-btn="arcade"] .btn-big { padding: 16px 20px 16px 78px; }
+body[data-btn="arcade"] .btn::before {
+  content: ""; position: absolute; left: 14px; top: 50%; width: 38px; height: 38px; margin-top: -24px; border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, #fff 0%, color-mix(in srgb, var(--yellow) 60%, #fff) 18%, var(--yellow) 55%, color-mix(in srgb, var(--yellow) 70%, #000) 100%);
+  box-shadow: 0 7px 0 color-mix(in srgb, var(--yellow) 55%, #000), 0 0 0 5px var(--ink), 0 12px 10px rgba(0, 0, 0, 0.25);
+  transition: transform 0.12s var(--out), box-shadow 0.12s var(--out);
+}
+body[data-btn="arcade"] .btn-big::before { left: 18px; width: 44px; height: 44px; margin-top: -27px; }
+body[data-btn="arcade"] .btn:hover::before { transform: translateY(-2px); box-shadow: 0 9px 0 color-mix(in srgb, var(--yellow) 55%, #000), 0 0 0 5px var(--ink), 0 14px 12px rgba(0, 0, 0, 0.25); }
+body[data-btn="arcade"] .btn:active::before { transform: translateY(6px); box-shadow: 0 1px 0 color-mix(in srgb, var(--yellow) 55%, #000), 0 0 0 5px var(--ink), 0 3px 4px rgba(0, 0, 0, 0.25); }
+body[data-btn="arcade"] .btn:hover { --drop: 4px; }
+body[data-btn="arcade"] .btn:active { --drop: 2px; }
+body[data-btn="arcade"] .btn-price { background: var(--ink); color: var(--paper); box-shadow: none; }
